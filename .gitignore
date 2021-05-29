@@ -1,0 +1,4 @@
+node_modules
+themes/*/static
+public
+.DS_Store

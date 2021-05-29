@@ -1,0 +1,49 @@
+.logo {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  text-decoration: none;
+  font-weight: bold;
+
+  img {
+    height: 44px;
+  }
+
+  &__text {
+    font-family: "Inconsolata", monospace;
+    font-style: normal;
+    font-weight: 600;
+    font-size: 1.3rem;
+
+    &__shell {
+      color: var(--primary);
+    }
+  }
+
+  &__cursor {
+    display: inline-block;
+    color: var(--primary);
+    margin-left: 5px;
+    animation: cursor 0.8s infinite;
+  }
+}
+
+.typewritter {
+  &__cursor {
+    display: inline-block;
+    margin-left: 5px;
+    animation: cursor 0.8s infinite;
+  }
+}
+
+@keyframes cursor {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

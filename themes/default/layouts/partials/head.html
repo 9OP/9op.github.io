@@ -1,0 +1,107 @@
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta
+  name="description"
+  content="{{ if .IsHome }}{{ $.Site.Params.Subtitle }}{{ else }}{{ .Summary | plainify }}{{ end }}"
+/>
+<meta
+  name="keywords"
+  content="{{ with .Params.Keywords }}{{ delimit . `, ` }}{{ else }}{{ $.Site.Params.Keywords }}{{ end }}"
+/>
+<meta name="robots" content="noodp" />
+<link rel="canonical" href="{{ .Permalink }}" />
+
+<!-- Theme CSS -->
+<link rel="stylesheet" href="{{ `assets/style.css` | absURL }}" />
+
+<!-- Fonts -->
+<!-- Inter -->
+<link
+  href="{{ `assets/fonts/Inter-Italic.woff2` | absURL }}"
+  rel="preload"
+  type="font/woff2"
+  as="font"
+  crossorigin=""
+/>
+<link
+  href="{{ `assets/fonts/Inter-Regular.woff2` | absURL }}"
+  rel="preload"
+  type="font/woff2"
+  as="font"
+  crossorigin=""
+/>
+<link
+  href="{{ `assets/fonts/Inter-Medium.woff2` | absURL }}"
+  rel="preload"
+  type="font/woff2"
+  as="font"
+  crossorigin=""
+/>
+<link
+  href="{{ `assets/fonts/Inter-MediumItalic.woff2` | absURL }}"
+  rel="preload"
+  type="font/woff2"
+  as="font"
+  crossorigin=""
+/>
+<link
+  href="{{ `assets/fonts/Inter-Bold.woff2` | absURL }}"
+  rel="preload"
+  type="font/woff2"
+  as="font"
+  crossorigin=""
+/>
+<link
+  href="{{ `assets/fonts/Inter-BoldItalic.woff2` | absURL }}"
+  rel="preload"
+  type="font/woff2"
+  as="font"
+  crossorigin=""
+/>
+
+<!-- Inconsolata -->
+<link
+  href="{{ `assets/fonts/Inconsolata-Regular.ttf` | absURL }}"
+  rel="preload"
+  type="font/truetype"
+  as="font"
+  crossorigin=""
+/>
+<link
+  href="{{ `assets/fonts/Inconsolata-SemiBold.ttf` | absURL }}"
+  rel="preload"
+  type="font/truetype"
+  as="font"
+  crossorigin=""
+/>
+<link
+  href="{{ `assets/fonts/Inconsolata-Bold.ttf` | absURL }}"
+  rel="preload"
+  type="font/truetype"
+  as="font"
+  crossorigin=""
+/>
+<link
+  href="{{ `assets/fonts/Inconsolata-ExtraBold.ttf` | absURL }}"
+  rel="preload"
+  type="font/truetype"
+  as="font"
+  crossorigin=""
+/>
+<link
+  href="{{ `assets/fonts/Inconsolata-Black.ttf` | absURL }}"
+  rel="preload"
+  type="font/truetype"
+  as="font"
+  crossorigin=""
+/>
+
+<!-- Twitter Card -->
+{{ template "_internal/twitter_cards.html" . }}
+
+<!-- OG data -->
+{{ template "_internal/opengraph.html" . }}
+
+<!-- RSS | JSON -->
+{{ range .AlternativeOutputFormats -}} {{ printf `<link rel="%s" type="%s" href="%s" title="%s" />`
+.Rel .MediaType.Type .RelPermalink $.Site.Title | safeHTML }} {{ end -}}

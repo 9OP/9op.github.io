@@ -1,0 +1,10 @@
+<footer class="footer">
+  <div class="footer__inner">
+    <hr>
+    {{ if $.Site.Copyright }}
+      <div class="copyright copyright--user">{{ $.Site.Copyright | safeHTML }}</div>
+    {{ end }}
+  </div>
+</footer>
+
+<script src="{{ `assets/main.js` | absURL }}"></script>

@@ -1,0 +1,48 @@
+:root {
+  /* light theme color */
+  --header: #ffffff;
+  --border-color: #dcdcdc;
+  --background: #f7f8fA;
+  --background-secondary: #e7e7e7;
+  --color: #222;
+  --color-secondary: #999;
+  --primary: #1ea2df;
+
+  /* variables for js, must be the same as these in @custom-media queries */
+  --phoneWidth: (max-width: 684px);
+  --tabletWidth: (max-width: 900px);
+}
+
+body.dark-theme {
+  /* dark theme colors */
+  --header: #262626; // header bg
+  --border-color: #4a4b50; // hr
+  // --background: #393e46; // bg
+  --background: #202022;
+  --background-secondary: #303030; // buttons
+  --color: #a9a9b3; // fonts - headlines - text
+  --color-secondary: #73747b; // light text
+  --primary: #ffd433;
+}
+
+@custom-media --phone (width < 684px);
+@custom-media --tablet (width < 900px);
+@custom-media --medium (width < 1360px);
+
+@define-mixin greater-icon $stroke-width: 3px, $width: 0.95rem, $height: 100% {
+  .greater-icon {
+    width: $width;
+    height: $height;
+
+    path {
+      stroke: currentColor;
+      stroke-width: $stroke-width;
+    }
+  }
+}
+
+/* HOW TO USE */
+
+/*@media (--phone) {*/
+/*margin-top: 0;*/
+/*}*/

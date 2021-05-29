@@ -1,0 +1,11 @@
+<a
+  href="{{ if $.Site.Params.Logo.LogoHomeLink }}{{ $.Site.Params.Logo.LogoHomeLink }}{{ else }}{{ $.Site.BaseURL }}{{ end }}"
+  class="logo"
+  style="text-decoration: none"
+>
+  <span class="logo__text">
+    <span class="logo__text__shell">>$ cd </span>
+    <span class="logo__text__path">{{ $.Site.Params.Logo.logoText }}</span>
+  </span>
+  <span class="logo__cursor">_</span>
+</a>

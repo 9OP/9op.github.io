@@ -1,0 +1,4 @@
+{{ $nb := .Get 0 | default 1 }}
+{{ range seq $nb }}
+    <br />
+{{ end }}

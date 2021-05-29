@@ -1,0 +1,31 @@
+.post-toc {
+    @media (--medium) {
+        display: none;
+    }
+    
+    border-left: 1px solid var(--border-color);
+    color: var(--color-secondary);
+    position: fixed; 
+    top: 6rem;
+    right: -3rem;
+    width: 20%;
+    text-decoration: none;
+    padding-left: 30px;
+
+    & > h2 {
+        margin-top: 0;
+    }
+
+    & nav > ul {
+        margin-left: 0;
+    }
+
+    & li {
+        list-style-type: none;
+        
+        a {
+            text-decoration: none;
+        }
+    }
+    
+}

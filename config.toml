@@ -1,0 +1,41 @@
+baseurl = "https://9op.github.io/"
+languageCode = "en-us"
+title = "9OP"
+theme= "default"
+paginate = 5
+copyright= "© 2021 - Martin Grd - <a href='https://github.com/9op/9op.github.io'>source</a>"
+
+[markup]
+  [markup.highlight]
+    lineNos = true
+    style = "solarized-dark"
+    tabWidth = 4
+
+
+[params] 
+  contentTypeName = "post"
+  defaultTheme = "dark" # dark / light
+  showMenuItems = 3 # elements before submenu trigger
+  showReadingTime = true
+  lastModDisplay = "Last edit"
+
+[languages]
+    [languages.en.params.logo]
+      logoText = "/home/martin"
+      logoHomeLink = "/"
+
+    [languages.en.menu]
+      [[languages.en.menu.main]]
+        identifier = "about"
+        name = "About"
+        url = "/about"
+
+      [[languages.en.menu.main]]
+        identifier = "post"
+        name = "Posts"
+        url = "/post"
+
+      [[languages.en.menu.main]]
+        identifier = "archive"
+        name = "Archives"
+        url = "/archive"
