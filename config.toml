@@ -14,7 +14,7 @@ copyright= "© 2021 - Martin Grd - <a href='https://github.com/9op/9op.github.io
 
 [params] 
   contentTypeName = "post"
-  defaultTheme = "dark" # dark / light
+  defaultTheme = "light" # dark / light
   showMenuItems = 3 # elements before submenu trigger
   showReadingTime = true
   lastModDisplay = "Last edit"
