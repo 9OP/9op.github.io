@@ -1,56 +1,51 @@
 ---
 draft: false
-layout: "single"
-type: "post"
-
 toc: true
 title: "Custom Go HTTP Router"
-date: "2021-05-22"
+date: "2021-05-30"
 readingTime: 30
 tags: ["go", "backend", "http", "router"]
-cover: "img/routes.jpg"
+cover: "cover.jpg"
 coverCaption: "© Christopher Burns"
 ---
 
 <!--description-->
 
-Ever wondered why there are so many Go routing libraries out there? Well, I don't know myself, but I've read *somewhere* that 
-this is because the standard Go router (yes the one in `net/http`) is not a good one because it is not performant or does not provide enough features.
+Ever wondered why there are so many Go HTTP routing libraries and frameworks out there? Well, I don't know myself, but I can help you create your
+own Go HTTP routing library and make other developers wonder why there are so many Go HTTP routing libraries...
 
-I will not talk about router performance because this is bullshit, routing time is **LARGELY** negligeable compared to IOs (database, APIs...).
-You surely do not need full a third party router for your use case but the Go router has some caveats you want to avoid?
+You will also be able to benchmark your own router against other people's router because everybody knows that a router's performance is **SO** much
+important and critical in a web API. 
 
-In this case you find the right article! In this post we are going to build a simple trie-based router that you will be able to customize to your needs.
+Of course, I am being sarcastic (is this a good sign for a first article?). The truth is that router performance is almost always negligible compared
+to IOs (databases, APIs ...). The Go standard `http.ServeMux` is said to not be performant, but this is not a concern. The main issue with it
+is that it only supports simple pattern matching. This is far more problematic than performance.
+
+Why would you need to create your HTTP router instead of relying on a Go web framework? I see multiple rationals to do so:
+- You don't need a full web framework but only a router supporting complex pattern matching
+- You like to keep your code clear and clean and prefer a short dependency tree
+- You need a modular router that you can extend
+- Building an HTTP router is simple and easy to maintain.
+
+I think building your router gives you more control over your web API and keep the dependency tree short and clean.
+In my opinion, it makes more sense in the context of microservices where you rarely need to leverage the full capacity of a web framework. 
 
 <!--more-->
 
-{{<linebreak 3>}}
+{{<linebreak 2>}}
+
+**Full code source on [GitHub](https://github.com/9OP/9op.github.io/tree/master/content/post/gorouter/src).**
+
+{{<linebreak>}}
 
 ## Introduction
 
-I started learning and using Go a few weeks ago and I completly felt in love with the language and its philoshophy.
-Go advocates simplicity and explicity. It is a memory-safe statically typed compiled language, *almost* as performant
-as C! Go was design at Google by living legends (namely K. Thompson, R. Pike) to be performant and easy to use.
+I started learning Go a few weeks ago and I really liked the language and its philoshophy.
+Go is a memory-safe statically typed compiled language, *almost* as performant as C! It was design at Google by 
+living legends (K. Thompson, R. Pike) to be performant and easy to use.
 
-One of [Go proverbs](https://go-proverbs.github.io/) is "A little copying is better than a little dependency." 
-Coming from the JavaScript world where there is a dependancy for everything 
-(even some ridiculous 2 lines long `isOdd` dependancy), this is refreshing.
-
-The Golang community does not suffer the same problem. Mainly because the community is many times smaller than the JavaScript
-community, so there is fewer brain time to reinvent the wheel again and again. 
-But also because the language itself advocates in his philosophy to avoid unecessary bloated dependencies.
-
-I don't know about you, but personnally I prefer my code to rely on fewer dependencies, even if I have to implement more application logic. 
-We developer are looking for control, for safety, for trust and this is easier to achieve with a pragmatic dependancy policy. 
-
-Why would you need to maintain your own HTTP router? 
-- You think the default Go router does not provide enough possibilities
-- You do not want to include a dependancy in your app
-- You need a custom router with specific routing capabilities
-
-I will be 100% honest with you. I don't think you really need a custom router. I truly think the Go default router is 
-good enough for the majority of our use case. However, I understand that developing its own router is appealling because of the
-control it offers. So here we are.
+One of [Go proverbs](https://go-proverbs.github.io/) is "A little copying is better than a little dependency."
+So I encourage you to copy and adapt the source code of this article if you need it.
 
 >In this blog post, I propose a simple trie-based router implementation in order to keep your HTTP service dependance's free.
 
@@ -58,7 +53,7 @@ control it offers. So here we are.
 
 ## Standard router
 
-Go standard HTTP router is good enough for simple routing pattern. However it does not support complex pattern matching like you could expect from
+The Go standard HTTP router is good enough for simple routing pattern. However it does not support the complex pattern matching you would expect from
 a web framework. For instance, there is not support for URL parameter, such as `/book/:id`
 ```go
 func main() {
@@ -96,15 +91,12 @@ home
 > $ curl localhost:8080/123
 home
 ```
-Some outputs are surprising. A request on `/about/` returns `home`, not `about` as one could expect. Same, a request on `/123`, which is not a declared endpoint, still returns `home` and not
-some `404` error.
+Some outputs are surprising. A request on `/about/` returns `home`, not `about` as one would expect. 
+Same, a request on `/123`, which is not a declared endpoint, returns `home` and not a `404` error.
 
-These caveats can be mitigated easily:
-- First, you might change the endpoint `/` for `/api` or `/home`. In that case there is not failling back route and you will get `404` if a request does not match.
-- Second, the trailling `/` in `/about/` can be fixed with a simple trimming function
-
-the default router is still fine for small web app that require only a simple routing strategy.
-But it comes short when one need more. 
+The default router is still fine for a small web API that only requires a simple routing strategy.
+However it comes short when one needs more. In order to support complex routing strategies we need to extend the 
+default router.
 
 {{<linebreak 3>}}
 
@@ -113,11 +105,15 @@ But it comes short when one need more.
 >
 > **- [Wikipedia](https://en.wikipedia.org/wiki/Trie)**
 
-A **trie** is the data structure that will allow our router to match HTTP request URL to our predefined route endpoints.
-This data structure is relevant for a router since multiple endpoints share common route elements. For instance routes 
-`/home`, `/home/about`, `/home/contact` share the same `/home` component.
-
-This tree-view is represented by a node `/home` that points towards leafs `/about` and `/contact`.
+A **trie** is the data structure that will allow our router to match HTTP request's URL to defined endpoints.
+This data structure is relevant for a router since multiple endpoints share common predecessors elements. For instance routes 
+`/home`, `/home/about`, `/home/contact` all share the same `/home` component. The corresponding trie would be a node `/home` 
+that points toward leaf nodes `/about` and `/contact`.
+```txt
+/home
+	↳ /about
+	↳ /contact
+```
 
 
 ### Trie node

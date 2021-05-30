@@ -32,7 +32,7 @@
 
     {{ if .Params.Cover }}
       <figure class="post-cover">
-        <img src="{{ .Params.Cover | absURL }}" alt="{{ .Params.CoverAlt | plainify | default .Title }}" />
+        <img src="{{ .Params.Cover }}" alt="{{ .Params.CoverAlt | plainify | default .Title }}" />
         {{ if .Params.CoverCaption }}
           <figcaption class="center">{{ .Params.CoverCaption | markdownify }}</figcaption>
         {{ end }}
