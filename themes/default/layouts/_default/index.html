@@ -32,11 +32,9 @@
             </span>
           {{ end }}
 
-          {{ if $.Site.Params.ShowReadingTime }}
-            <span class="post-read-time">
-              — {{ .Params.ReadingTime }} {{ $.Site.Params.MinuteReadingTime | default "min read" }}
-            </span>
-          {{ end }}
+          <span class="post-read-time">
+            — {{ .Params.ReadingTime }} {{ $.Site.Params.MinuteReadingTime | default "min read" }}
+          </span>
         </div>
 
         {{ if .Params.tags }}

@@ -17,11 +17,9 @@
         {{ end }}
       {{ end }}
 
-      {{ if .Params.ReadingTime }}
-        <span class="post-read-time">
-          — {{ .Params.ReadingTime }} min read
-        </span>
-      {{ end }}
+      <span class="post-read-time">
+        — {{ .Params.ReadingTime }} min read
+      </span>
     </div>
 
     {{ if .Params.tags }}
@@ -42,7 +40,6 @@
     {{ end }}
 
     <div class="post-main">
-
       {{ if .Params.toc }}
         <div class="post-toc">
           <h2>Content</h2>
@@ -53,11 +50,7 @@
       <div class="post-content">
         {{ .Content }}
       </div>
-
     </div>
-
-
-
 
     {{ if eq .Type $.Site.Params.contentTypeName }}
       {{ if or .NextInSection .PrevInSection }}

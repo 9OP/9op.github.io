@@ -1,9 +1,12 @@
 ---
 draft: false
+layout: "single"
+type: "post"
+
 toc: true
 title: "Custom Go HTTP Router"
 date: "2021-05-22"
-readingTime: 25
+readingTime: 30
 tags: ["go", "backend", "http", "router"]
 cover: "img/routes.jpg"
 coverCaption: "© Christopher Burns"
