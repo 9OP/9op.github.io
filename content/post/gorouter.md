@@ -1,5 +1,5 @@
 ---
-draft: false
+draft: true
 toc: true
 title: "Custom Go HTTP Router"
 date: "2021-05-22"
