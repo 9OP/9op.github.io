@@ -310,7 +310,6 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if h := router.match(r); h != nil {
 		handler = h
 
-		// Apply middlwares
 		for _, m := range router.m {
 			handler = m(handler)
 		}

@@ -22,8 +22,8 @@ You will also be able to benchmark your own router against other people's router
 important and critical in a web API. 
 
 Of course, I am being sarcastic (is this a good sign for a first article?). The truth is that router performance is almost always negligible compared
-to IOs (databases, APIs ...). The Go standard `http.ServeMux` is said to not be performant, but this is not a concern. The main issue with it
-is that it only supports simple pattern matching. This is far more problematic than performance.
+to IOs (databases, APIs ...), so why should it matters?. The Go standard `http.ServeMux` is said to not be performant, but this is not a concern. 
+The main issue with it is that it only supports simple pattern matching. This is far more problematic than performance.
 
 Why would you need to create your HTTP router instead of relying on a Go web framework? I see multiple rationals to do so:
 - You don't need a full web framework but only a router supporting complex pattern matching
@@ -88,7 +88,7 @@ func about(w http.ResponseWriter, r *http.Request) {
 This is a simple web server with two routes: `/` and `/about`.
 We can test the web server with `curl`:
 
-```txt
+```txt {linenos=false}
 > $ curl localhost:8080/
 home
 
@@ -120,7 +120,7 @@ This data structure is relevant for a router since multiple endpoints share comm
 `/home`, `/home/about`, `/home/contact` all share the same `/home` component. The corresponding trie would be a node `/home` 
 that points toward leaf nodes `/about` and `/contact`.
 
-```txt
+```txt {linenos=false}
 /home
 	↳ /about
 	↳ /contact
@@ -291,7 +291,7 @@ We now have every necessary elements for a our base `Router`. Let's have a look 
 
 These corresponds to a simple CRUD API endpoints to create and borrow books. The corresponding trie is:
 
-```txt
+```txt {linenos=false}
 >$ go run .
 ↳ head  				[]
 	↳ book  			[POST GET]
@@ -346,7 +346,7 @@ func about(w http.ResponseWriter, r *http.Request) {
 
 This router fix the caveats found in the standard router:
 
-```txt
+```txt {linenos=false}
 > $ curl localhost:8080/home
 home
 
@@ -437,7 +437,7 @@ func (node *node) getLeaf(v string) (*node, []string) {
 
 For instance, given the following node and `v=5`, `getLeaf` would return `*node, map[id: 5]`:
 
-```txt
+```txt {linenos=false}
 {
 	handlers:   []
 	leaves:     {':id': *node }
@@ -506,11 +506,235 @@ For instance, given:
 
 The `Vars` function would return `map["id": "5"]`
 
+Then we update the `ServeHTTP` and `match` methods to use the context variable "vars".
 
+```go
+func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if err := recover(); err != nil {
+			http.Error(w, "server error", http.StatusInternalServerError)
+		}
+	}()
 
+	handler := http.NotFoundHandler()
+	vars := map[string]string{}
+
+	if h := router.match(r, vars); h != nil {
+		handler = h
+	}
+
+	ctx := context.WithValue(r.Context(), "vars", vars)
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+func (router *Router) match(r *http.Request, vars map[string]string) http.Handler {
+	if node := router.trie.search(split(r.URL.Path), vars); node != nil {
+		return node.handlers[r.Method]
+	}
+	return nil
+}
+```
+
+Finally, the node method `search` append the parsed URL parameters in the `vars` map when a pattern is found.
+
+```go
+func (node *node) search(path []string, vars map[string]string) *node {
+	if len(path) == 0 {
+		return node
+	}
+
+	leaf, pattern := node.getLeaf(path[0])
+	if leaf == nil {
+		return nil
+	}
+
+	if pattern != nil {
+        // given endpoint /:id:^[0-9]$ and request /5
+        // pattern[0]= "id" pattern[1]= "5"
+		vars[pattern[0]] = pattern[1]
+	}
+
+	return leaf.search(path[1:], vars)
+}
+```
+
+{{<linebreak >}}
+
+The feature is complete, we are able to test it with a simple web server:
+
+```go
+func main() {
+	router := NewRouter()
+	http.Handle("/", router)
+
+	router.Handle("/book/:id:^[0-9]{1,3}$", "GET", http.HandlerFunc(book))
+
+	// ListenAndServe
+}
+
+func book(w http.ResponseWriter, r *http.Request) {
+	vars := Vars(r)
+	fmt.Fprintf(w, "book: %s \n", vars["id"])
+}
+```
+
+Few examples:
+
+```txt {linenos=false}
+> $ curl localhost:8080/home/456
+book: 456
+
+> $ curl localhost:8080/home/3
+book: 3
+
+> $ curl localhost:8080/home/abc
+404 page not found
+
+> $ curl localhost:8080/home/1234
+404 page not found
+```
+
+The server returned a `NotFound` error for the requests with `:id` that was not a sequence of 1-to-3 digits.
+
+{{<linebreak 3>}}
+
+### Middlewares
+
+Middlewares are very common when designing web services. They are basically piece of logic that lies between the a router and a handler.
+The following application logic are usually carried via middlewares:
+- CORS
+- User authentication / authorization
+- Logging / monitoring
+- Translation
+
+A middleware function signature is just `func middleware(h http.Handler) http.Handler`. 
+It simply is a function that takes a handler and return a decorated handler. Nothing more.
+
+Because the signature is "bijective", it is easy to chain middlewares along.
+
+The first step is to extend the router object and define a `middleware` type.
+Then we create a new router method `Use` that append a middleware to a router instance.
+
+```go
+type middleware = func(h http.Handler) http.Handler
+
+type Router struct {
+	trie        *node
+	middlewares []middleware
+}
+
+func NewRouter() *Router {
+	return &Router{
+		trie:        newNode(),
+		middlewares: [*middleware{},
+	}
+}
+
+func (router *Router) Use(m middleware) {
+	router.middlewares = append(router.middlewares, m)
+}
+```
+
+Finally, the last step is to apply the middleware to the handler:
+
+```go
+func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    // defer...
+	handler := http.NotFoundHandler()
+
+	if h := router.match(r); h != nil {
+		handler = h
+
+		// Apply middlewares
+		for _, m := range router.middlewares {
+			handler = m(handler)
+		}
+	}
+
+	handler.ServeHTTP(w, r)
+}
+```
+
+{{<linebreak>}}
+
+The feature is complete, we can test it with a simple web server:
+
+```go
+func main() {
+	router := NewRouter()
+	router.Handle("/home", "GET", http.HandlerFunc(home))
+	
+	router.Use(helloMiddleware)
+	// ... ListenAndServe
+}
+
+func home(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, "hello world!\n")
+}
+
+func helloMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        // before the handler is executed
+		w.Write([]byte("I am a middleware!\n"))
+		
+        h.ServeHTTP(w, r)
+
+        // after the handler is executed
+		w.Write([]byte("Bip bip bop!\n"))
+	})
+}
+```
+
+An example:
+
+```txt {linenos=false}
+> $ curl localhost:8080/home                      
+
+I am a middleware!
+hello world!
+Bip bip bop!
+```
+
+As expected, the handler `home` was surrounded by the middleware writings.
+
+This is a silly example. The point of a middleware is to perform intermediate logics before and after handlers. This is convenient because joined with 
+context, middlewares can append new context variables to the requests before they reache the handlers.
+
+Typically, this is used when authenticating user. A user is authenticated by a middleware, then the user entity is passed to the handlers via a context variable.
+
+A dummy authentication middleware would look like:
+
+```go
+func Authentication(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if t := r.Header.Get("token"); t != "SECRET-ACCESS-TOKEN" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+        w.Write([]byte("Authorized\n"))
+		h.ServeHTTP(w, r)
+	})
+}
+```
+
+And return the following reponses:
+
+```txt {linenos=false}
+> $ curl localhost:8080/home
+401 Unauthorized
+
+> $ curl -H "token: SECRET-ACCESS-TOKEN"  localhost:8080/home
+Authorized
+```
 
 {{<linebreak 3>}}
 
 ## Conclusion
 
-conclusion
+Go philosophy and community advocate simplicity and minimizing dependency when possible.
+It does not mean one should feel guilty for relying on an external library, however, it means one should always
+carefully evaluate the tradeoffs of using a lib.
+
+In this article, we have implemented a tri-based router, that allows more complex routing pattern than
+the Go standard router, without relying on an external routing package.
+Creating a custom router is simple and the implementation is no more than 200 LOC which makes it easy to maintain in the long term.

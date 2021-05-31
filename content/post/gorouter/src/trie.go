@@ -62,15 +62,19 @@ func (node *node) append(path []string) *node {
 	return leaf.append(path[1:])
 }
 
-func (node *node) search(path []string) *node {
+func (node *node) search(path []string, vars map[string]string) *node {
 	if len(path) == 0 {
 		return node
 	}
 
-	leaf, _ := node.getLeaf(path[0])
+	leaf, pattern := node.getLeaf(path[0])
 	if leaf == nil {
 		return nil
 	}
 
-	return leaf.search(path[1:])
+	if pattern != nil {
+		vars[pattern[0]] = pattern[1]
+	}
+
+	return leaf.search(path[1:], vars)
 }
