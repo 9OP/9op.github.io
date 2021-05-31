@@ -17,9 +17,11 @@
         {{ end }}
       {{ end }}
 
-      <span class="post-read-time">
-        — {{ .Params.ReadingTime }} min read
-      </span>
+      {{ if .Params.ReadingTime }}
+        <span class="post-read-time">
+          — {{ .Params.ReadingTime }} min read
+        </span>
+      {{ end }}
     </div>
 
     {{ if .Params.tags }}
