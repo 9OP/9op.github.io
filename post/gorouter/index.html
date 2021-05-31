@@ -1,0 +1,766 @@
+<!doctype html><html lang=en><head><title>Custom Go HTTP Router :: Martin Grd</title><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Ever wondered why there are so many Go HTTP routing libraries and frameworks out there? Well, I don&amp;rsquo;t know myself, but I can help you create your own Go HTTP routing library and make other developers wonder why there are so many Go HTTP routing libraries&amp;hellip;
+"><meta name=keywords content><meta name=robots content="noodp"><link rel=canonical href=https://9op.github.io/post/gorouter/><link rel=stylesheet href=https://9op.github.io/assets/style.css><link href=https://9op.github.io/assets/fonts/Inter-Italic.woff2 rel=preload type=font/woff2 as=font crossorigin><link href=https://9op.github.io/assets/fonts/Inter-Regular.woff2 rel=preload type=font/woff2 as=font crossorigin><link href=https://9op.github.io/assets/fonts/Inter-Medium.woff2 rel=preload type=font/woff2 as=font crossorigin><link href=https://9op.github.io/assets/fonts/Inter-MediumItalic.woff2 rel=preload type=font/woff2 as=font crossorigin><link href=https://9op.github.io/assets/fonts/Inter-Bold.woff2 rel=preload type=font/woff2 as=font crossorigin><link href=https://9op.github.io/assets/fonts/Inter-BoldItalic.woff2 rel=preload type=font/woff2 as=font crossorigin><link href=https://9op.github.io/assets/fonts/Inconsolata-Regular.ttf rel=preload type=font/truetype as=font crossorigin><link href=https://9op.github.io/assets/fonts/Inconsolata-SemiBold.ttf rel=preload type=font/truetype as=font crossorigin><link href=https://9op.github.io/assets/fonts/Inconsolata-Bold.ttf rel=preload type=font/truetype as=font crossorigin><link href=https://9op.github.io/assets/fonts/Inconsolata-ExtraBold.ttf rel=preload type=font/truetype as=font crossorigin><link href=https://9op.github.io/assets/fonts/Inconsolata-Black.ttf rel=preload type=font/truetype as=font crossorigin><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content="https://9op.github.io/post/gorouter/cover.jpg"><meta name=twitter:title content="Custom Go HTTP Router"><meta name=twitter:description content="
+Ever wondered why there are so many Go HTTP routing libraries and frameworks out there? Well, I don&rsquo;t know myself, but I can help you create your
+own Go HTTP routing library and make other developers wonder why there are so many Go HTTP routing libraries&mldr;"><meta property="og:title" content="Custom Go HTTP Router"><meta property="og:description" content="
+Ever wondered why there are so many Go HTTP routing libraries and frameworks out there? Well, I don&rsquo;t know myself, but I can help you create your
+own Go HTTP routing library and make other developers wonder why there are so many Go HTTP routing libraries&mldr;"><meta property="og:type" content="article"><meta property="og:url" content="https://9op.github.io/post/gorouter/"><meta property="og:image" content="https://9op.github.io/post/gorouter/cover.jpg"><meta property="article:section" content="post"><meta property="article:published_time" content="2021-05-30T00:00:00+00:00"><meta property="article:modified_time" content="2021-05-30T00:00:00+00:00"></head><body><div class=container><header class=header><span class=header__inner><a href=/ class=logo style=text-decoration:none><span class=logo__text><span class=logo__text__shell>>$ cd</span>
+<span class=logo__text__path>/home/martin</span></span>
+<span class=logo__cursor>_</span></a>
+<span class=header__right><nav class=menu><ul class="menu__inner menu__inner--desktop"><li><a href=/about>About</a></li><li><a href=/archive>Archives</a></li><li><a href=/post>Posts</a></li></ul><ul class="menu__inner menu__inner--mobile"><li><a href=/about>About</a></li><li><a href=/archive>Archives</a></li><li><a href=/post>Posts</a></li></ul></nav><span class=menu-trigger><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></span><span class=theme-toggle><svg class="theme-toggler" width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 41c10.4934.0 19-8.5066 19-19C41 11.5066 32.4934 3 22 3 11.5066 3 3 11.5066 3 22s8.5066 19 19 19zM7 22C7 13.7157 13.7157 7 22 7V37C13.7157 37 7 30.2843 7 22z"/></svg></span></span></span></header><div class=content><div class=post><h1 class=post-title>Custom Go HTTP Router</h1><div class=post-meta><span class=post-date>2021-05-30</span>
+<span class=post-read-time>— 30 min read</span></div><span class=post-tags><a href=https://9op.github.io/tags/go/>#go</a>&nbsp;
+<a href=https://9op.github.io/tags/backend/>#backend</a>&nbsp;
+<a href=https://9op.github.io/tags/http/>#http</a>&nbsp;
+<a href=https://9op.github.io/tags/router/>#router</a>&nbsp;</span><figure class=post-cover><img src=cover.jpg alt="Custom Go HTTP Router"><figcaption class=center>© Christopher Burns</figcaption></figure><div class=post-main><div class=post-toc><h2>Content</h2><aside><nav id=TableOfContents><ul><li><a href=#introduction>Introduction</a></li><li><a href=#part-1---building-the-router>Part 1 - Building the router</a><ul><li><a href=#standard-router>Standard router</a></li><li><a href=#prefix-tree>Prefix tree</a><ul><li><a href=#append>Append</a></li><li><a href=#search>Search</a></li></ul></li><li><a href=#router>Router</a><ul><li><a href=#handle>Handle</a></li><li><a href=#servehttp>ServeHTTP</a></li></ul></li><li><a href=#usage>Usage</a></li></ul></li><li><a href=#part-2---extending-the-router>Part 2 - Extending the router</a><ul><li><a href=#url-parameters>URL parameters</a><ul><li><a href=#parse>Parse</a></li><li><a href=#match>Match</a></li></ul></li><li><a href=#middlewares>Middlewares</a></li></ul></li><li><a href=#conclusion>Conclusion</a></li></ul></nav></aside></div><div class=post-content><p>Ever wondered why there are so many Go HTTP routing libraries and frameworks out there? Well, I don&rsquo;t know myself, but I can help you create your
+own Go HTTP routing library and make other developers wonder why there are so many Go HTTP routing libraries&mldr;</p><p>You will also be able to benchmark your own router against other people&rsquo;s router because everybody knows that a router&rsquo;s performance is <strong>SO</strong> much
+important and critical in a web API.</p><p>Of course, I am being sarcastic (is this a good sign for a first article?). The truth is that router performance is almost always negligible compared
+to IOs (databases, APIs &mldr;), so why should it matters?. The Go standard <code>http.ServeMux</code> is said to not be performant, but this is not a concern.
+The main issue with it is that it only supports simple pattern matching. This is far more problematic than performance.</p><p>Why would you need to create your HTTP router instead of relying on a Go web framework? I see multiple rationals to do so:</p><ul><li>You don&rsquo;t need a full web framework but only a router supporting complex pattern matching</li><li>You like to keep your code clear and clean and prefer a short dependency tree</li><li>You need a modular router that you can extend</li><li>Building an HTTP router is simple and easy to maintain.</li></ul><p>I think building your router gives you more control over your web API and keep the dependency tree short and clean.
+In my opinion, it makes more sense in the context of microservices where you rarely need to leverage the full capacity of a web framework.</p><br><br><p><strong>Sources on <a href=https://github.com/9OP/9op.github.io/tree/master/content/post/gorouter/src>GitHub</a>.</strong></p><br><h2 id=introduction>Introduction <a class=anchor href=#introduction>#</a></h2><p>I started learning Go a few weeks ago and I liked the language and its philosophy.
+Go is a memory-safe statically typed compiled language, <em>almost</em> as performant as C!
+It was designed at Google by living legends (K. Thompson, R. Pike) to be performant and easy to use.</p><p>One of <a href=https://go-proverbs.github.io/>Go proverbs</a> is &ldquo;A little copying is better than a little dependency.&rdquo;
+So I encourage you to copy and adapt the source code of this article if you need it.</p><blockquote><p>This blog post is divided in two parts to make it more &ldquo;digest&rdquo;. The first part focuses on building a trie-based simple
+HTTP router. The second part focuses on extending the router build in the first part to support middlewares and complex
+pattern matching</p></blockquote><br><br><br><h2 id=part-1---building-the-router>Part 1 - Building the router <a class=anchor href=#part-1---building-the-router>#</a></h2><hr><h3 id=standard-router>Standard router <a class=anchor href=#standard-router>#</a></h3><p>The Go standard HTTP router is good enough for simple routing pattern. However it does not support the complex pattern matching you would expect from
+a web framework. For instance, there is not support for URL parameter, such as <code>/book/:id</code></p><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">17
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">18
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">19
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#268bd2>func</span> <span style=color:#268bd2>main</span>() {
+	http.<span style=color:#268bd2>HandleFunc</span>(<span style=color:#2aa198>&#34;/&#34;</span>, home)
+	http.<span style=color:#268bd2>HandleFunc</span>(<span style=color:#2aa198>&#34;/about&#34;</span>, about)
+
+	addr <span style=color:#719e07>:=</span> fmt.<span style=color:#268bd2>Sprintf</span>(<span style=color:#2aa198>&#34;localhost:%v&#34;</span>, <span style=color:#2aa198>8080</span>)
+	srv <span style=color:#719e07>:=</span> <span style=color:#719e07>&amp;</span>http.Server{
+		Addr:    addr,
+		Handler: http.DefaultServeMux,
+	}
+	log.<span style=color:#268bd2>Fatal</span>(srv.<span style=color:#268bd2>ListenAndServe</span>())
+}
+
+<span style=color:#268bd2>func</span> <span style=color:#268bd2>home</span>(w http.ResponseWriter, r <span style=color:#719e07>*</span>http.Request) {
+	fmt.<span style=color:#268bd2>Fprint</span>(w, <span style=color:#2aa198>&#34;home\n&#34;</span>)
+}
+
+<span style=color:#268bd2>func</span> <span style=color:#268bd2>about</span>(w http.ResponseWriter, r <span style=color:#719e07>*</span>http.Request) {
+	fmt.<span style=color:#268bd2>Fprint</span>(w, <span style=color:#2aa198>&#34;about\n&#34;</span>)
+}
+</code></pre></td></tr></table></div></div><p>This is a simple web server with two routes: <code>/</code> and <code>/about</code>.
+We can test the web server with <code>curl</code>:</p><div class=highlight><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-txt data-lang=txt>&gt; $ curl localhost:8080/
+home
+
+&gt; $ curl localhost:8080/about
+about
+
+&gt; $ curl localhost:8080/about/
+home
+
+&gt; $ curl localhost:8080/123
+home
+</code></pre></div><p>Some outputs are surprising. A request on <code>/about/</code> returns <code>home</code>, not <code>about</code> as one would expect.
+Same, a request on <code>/123</code>, which is not a declared endpoint, returns <code>home</code> and not a <code>404</code> error.</p><p>The default router is still fine for a small web API that only requires a simple routing strategy.
+However, it comes short when one needs more. To support complex routing strategies we need to extend the default router.</p><br><br><br><h3 id=prefix-tree>Prefix tree <a class=anchor href=#prefix-tree>#</a></h3><blockquote><p>A prefix tree, or trie, is a type of search tree, a tree data structure used for locating specific keys from within a set.</p><p><strong>- <a href=https://en.wikipedia.org/wiki/Trie>Wikipedia</a></strong></p></blockquote><p>A <strong>trie</strong> is the data structure that will allow our router to match HTTP request&rsquo;s URL to defined endpoints.
+This data structure is relevant for a router since multiple endpoints share common predecessors elements. For instance the routes
+<code>/home</code>, <code>/home/about</code>, <code>/home/contact</code> all share the same <code>/home</code> component. The corresponding trie would be a node <code>/home</code>
+that points toward leaf nodes <code>/about</code> and <code>/contact</code>.</p><div class=highlight><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-txt data-lang=txt>/home
+	↳ /about
+	↳ /contact
+</code></pre></div><p>We will need to implement our own version of a trie since it is not present in the standard library. The first step is to
+define the data structure of a trie. It is simply a chain of linked nodes.</p><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">13
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#719e07>import</span> <span style=color:#2aa198>&#34;net/http&#34;</span>
+
+<span style=color:#268bd2>type</span> node <span style=color:#268bd2>struct</span> {
+	handlers <span style=color:#268bd2>map</span>[<span style=color:#dc322f>string</span>]http.Handler
+	leaves 	 <span style=color:#268bd2>map</span>[<span style=color:#dc322f>string</span>]<span style=color:#719e07>*</span>node
+}
+
+<span style=color:#268bd2>func</span> <span style=color:#268bd2>newNode</span>() <span style=color:#719e07>*</span>node {
+	<span style=color:#719e07>return</span> <span style=color:#719e07>&amp;</span>node{
+		handlers: <span style=color:#268bd2>map</span>[<span style=color:#dc322f>string</span>]http.Handler{},
+		leaves:   <span style=color:#268bd2>map</span>[<span style=color:#dc322f>string</span>]<span style=color:#719e07>*</span>node{},
+	}
+}
+</code></pre></td></tr></table></div></div><p>The object <code>node</code> contains two fields. <code>handlers</code> which maps an HTTP method (<code>"GET"</code>, <code>"POST"</code>, <code>"PUT"</code>, <code>"DELETE"</code> &mldr;)
+to an <code>http.Handler</code> and <code>leaves</code> which maps a single URL path component (<code>/home</code>, <code>/about</code>, <code>/contact</code> &mldr;) to a leaf <code>node</code>.</p><h4 id=append>Append <a class=anchor href=#append>#</a></h4><p>We need to create a method to build the trie. Because this data structure is used dynamically by the <code>Router</code>,
+we need a function that can append dynamically (ie. at runtime) new endpoints to the trie.</p><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">17
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">18
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">19
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">20
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">21
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#268bd2>func</span> (node <span style=color:#719e07>*</span>node) <span style=color:#b58900>append</span>(path []<span style=color:#dc322f>string</span>) <span style=color:#719e07>*</span>node {
+	<span style=color:#719e07>if</span> <span style=color:#b58900>len</span>(path) <span style=color:#719e07>==</span> <span style=color:#2aa198>0</span> {
+		<span style=color:#719e07>return</span> node
+	}
+	component <span style=color:#719e07>:=</span> path[<span style=color:#2aa198>0</span>]
+
+	leaf <span style=color:#719e07>:=</span> node.<span style=color:#268bd2>getLeaf</span>(component)
+	<span style=color:#719e07>if</span> leaf <span style=color:#719e07>==</span> <span style=color:#cb4b16>nil</span> {
+		node.leaves[component] = <span style=color:#268bd2>newNode</span>()
+		leaf = node.leaves[component]
+	}
+
+	<span style=color:#719e07>return</span> leaf.<span style=color:#b58900>append</span>(path[<span style=color:#2aa198>1</span>:])
+}
+
+<span style=color:#268bd2>func</span> (node <span style=color:#719e07>*</span>node) <span style=color:#268bd2>getLeaf</span>(v <span style=color:#dc322f>string</span>) <span style=color:#719e07>*</span>node {
+	<span style=color:#719e07>if</span> node, ok <span style=color:#719e07>:=</span> node.leaves[v]; ok {
+		<span style=color:#719e07>return</span> node
+	}
+	<span style=color:#719e07>return</span> <span style=color:#cb4b16>nil</span>
+}
+</code></pre></td></tr></table></div></div><p><code>append</code> is a <code>node</code> (recursive) method that takes a slice/array of path components (eg. <code>["/home", "/contact"]</code> for path <code>"/home/contact"</code>),
+create the leaves and return a reference to the node matching the given <code>path</code>. <code>getLeaf</code> is a simple utility method
+that returns a reference to the leaf node that match a path component.</p><h4 id=search>Search <a class=anchor href=#search>#</a></h4><p>Then we need a function that return the node instance of a given path. This function is similar to append, it just does not create new leaves.</p><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">12
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#268bd2>func</span> (node <span style=color:#719e07>*</span>node) <span style=color:#268bd2>search</span>(path []<span style=color:#dc322f>string</span>) <span style=color:#719e07>*</span>node {
+	<span style=color:#719e07>if</span> <span style=color:#b58900>len</span>(path) <span style=color:#719e07>==</span> <span style=color:#2aa198>0</span> {
+		<span style=color:#719e07>return</span> node
+	}
+
+	leaf <span style=color:#719e07>:=</span> node.<span style=color:#268bd2>getLeaf</span>(path[<span style=color:#2aa198>0</span>])
+	<span style=color:#719e07>if</span> leaf <span style=color:#719e07>==</span> <span style=color:#cb4b16>nil</span> {
+		<span style=color:#719e07>return</span> <span style=color:#cb4b16>nil</span>
+	}
+
+	<span style=color:#719e07>return</span> leaf.<span style=color:#268bd2>search</span>(path[<span style=color:#2aa198>1</span>:])
+}
+</code></pre></td></tr></table></div></div><p>The logic of <code>search</code> is similar to <code>append</code> since they both are <a href=https://en.wikipedia.org/wiki/Depth-first_search>DFS traversal algorithm</a>.
+In the case of <code>search</code>, the stopping condition returns the last reached leaf&rsquo;s handlers or returns nil if the path is not found.</p><br><br><br><h3 id=router>Router <a class=anchor href=#router>#</a></h3><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050">1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">9
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#268bd2>type</span> Router <span style=color:#268bd2>struct</span> {
+	trie <span style=color:#719e07>*</span>node
+}
+
+<span style=color:#268bd2>func</span> <span style=color:#268bd2>NewRouter</span>() <span style=color:#719e07>*</span>Router {
+	<span style=color:#719e07>return</span> <span style=color:#719e07>&amp;</span>Router{
+		trie: <span style=color:#268bd2>newNode</span>(),
+	}
+}
+</code></pre></td></tr></table></div></div><p>The object <code>Router</code> contains a head <code>node</code> reference to our routing trie.
+Later we are going to extend the <code>Router</code> to support middlewares.</p><p><code>Router</code> needs two main methods to be used with the <code>net/http</code> package:</p><ul><li>A method to map a handler to a endpoint</li><li>A method to serve an HTTP request</li></ul><h4 id=handle>Handle <a class=anchor href=#handle>#</a></h4><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">11
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#268bd2>func</span> (router <span style=color:#719e07>*</span>Router) <span style=color:#268bd2>Handle</span>(path, method <span style=color:#dc322f>string</span>, h http.Handler) {
+	node <span style=color:#719e07>:=</span> router.trie.<span style=color:#b58900>append</span>(<span style=color:#268bd2>split</span>(path))
+	node.handlers[method] = h
+}
+
+<span style=color:#268bd2>func</span> <span style=color:#268bd2>split</span>(path <span style=color:#dc322f>string</span>) []<span style=color:#dc322f>string</span> {
+	path = strings.<span style=color:#268bd2>TrimSpace</span>(path)
+	path = strings.<span style=color:#268bd2>TrimPrefix</span>(path, <span style=color:#2aa198>&#34;/&#34;</span>)
+	path = strings.<span style=color:#268bd2>TrimSuffix</span>(path, <span style=color:#2aa198>&#34;/&#34;</span>)
+	<span style=color:#719e07>return</span> strings.<span style=color:#268bd2>Split</span>(path, <span style=color:#2aa198>&#34;/&#34;</span>)
+}
+</code></pre></td></tr></table></div></div><p><code>Handle</code> method first append the endpoint <code>path</code> to the router&rsquo;s trie. Then it maps the <code>method</code> to the <code>h http.Handler</code>.
+We use <code>split</code>, a simple utility function, that returns a trimmed slice of components from a path (eg. <code>split("/home/contact/") = ["home", "contact"]</code>).</p><h4 id=servehttp>ServeHTTP <a class=anchor href=#servehttp>#</a></h4><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">17
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">18
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">19
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">20
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">21
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#268bd2>func</span> (router <span style=color:#719e07>*</span>Router) <span style=color:#268bd2>ServeHTTP</span>(w http.ResponseWriter, r <span style=color:#719e07>*</span>http.Request) {
+	<span style=color:#719e07>defer</span> <span style=color:#268bd2>func</span>() {
+		<span style=color:#719e07>if</span> err <span style=color:#719e07>:=</span> <span style=color:#b58900>recover</span>(); err <span style=color:#719e07>!=</span> <span style=color:#cb4b16>nil</span> {
+			http.<span style=color:#268bd2>Error</span>(w, <span style=color:#2aa198>&#34;server error&#34;</span>, http.StatusInternalServerError)
+		}
+	}()
+
+	handler <span style=color:#719e07>:=</span> http.<span style=color:#268bd2>NotFoundHandler</span>()
+	
+	<span style=color:#719e07>if</span> h <span style=color:#719e07>:=</span> router.<span style=color:#268bd2>match</span>(r); h <span style=color:#719e07>!=</span> <span style=color:#cb4b16>nil</span> {
+		handler = h
+	}
+	handler.<span style=color:#268bd2>ServeHTTP</span>(w, r)
+}
+
+<span style=color:#268bd2>func</span> (router <span style=color:#719e07>*</span>Router) <span style=color:#268bd2>match</span>(r <span style=color:#719e07>*</span>http.Request) http.Handler {
+	<span style=color:#719e07>if</span> node <span style=color:#719e07>:=</span> router.trie.<span style=color:#268bd2>search</span>(<span style=color:#268bd2>split</span>(r.URL.Path)); node <span style=color:#719e07>!=</span> <span style=color:#cb4b16>nil</span> {
+		<span style=color:#719e07>return</span> node.handlers[r.Method]
+	}
+	<span style=color:#719e07>return</span> <span style=color:#cb4b16>nil</span>
+}
+</code></pre></td></tr></table></div></div><p><code>ServeHTTP</code> executes the relevant handler for each requests. The <code>defer func()</code> block allows to catch every panic (ie. Go exceptions) from sub modules and
+return a clean <code>500 - server error</code> reponse to the clients without crashing the service. <code>handler</code> is initizalized with <code>NotFoundHandler</code>.
+If the router is able to match the request then <code>handler</code> is overiden by the found handler. Finally, <code>match</code> is a wrapper arround the
+router&rsquo;s trie <code>search</code> method. It just returns the associated handler of a request if the path exists in the router&rsquo;s trie.</p><br><p>We now have every necessary elements for a our base <code>Router</code>. Let&rsquo;s have a look on the trie-hierarchy for the following routes:</p><ul><li><code>GET /book</code></li><li><code>POST /book</code></li><li><code>GET /book/:id</code></li><li><code>DELETE /book/:id</code></li><li><code>PUT /book/:id</code></li><li><code>POST /book/:id/borrow</code></li><li><code>GET /book/:id/borrow</code></li><li><code>PUT /book/:id/borrow/:id</code></li><li><code>GET /book/author/:id</code></li></ul><p>These corresponds to a simple CRUD API endpoints to create and borrow books. The corresponding trie is:</p><div class=highlight><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-txt data-lang=txt>&gt;$ go run .
+↳ head  				[]
+	↳ book  			[POST GET]
+        ↳ author  		[]
+        	↳ :id 		[GET]
+    	↳ :id			[GET DELETE PUT]
+        	↳ borrow	[POST GET PUT]
+</code></pre></div><p>Each line shows the handlers keys associated to a specific node. The node <code>book -> author</code> does not contain
+any keys as it is not a defined endpoint. The node <code>/book/:id/borrow</code> contains handlers for the methods <code>POST, GET, PUT</code></p><br><br><br><h3 id=usage>Usage <a class=anchor href=#usage>#</a></h3><p>Usage is straightforward, simply instantiate a router and pass it as the root handler of the server:</p><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">17
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">18
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">19
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">20
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">21
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">22
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">23
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">24
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">25
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">26
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">27
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">28
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">29
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">30
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">31
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#719e07>package</span> main
+
+<span style=color:#719e07>import</span> (
+	<span style=color:#2aa198>&#34;fmt&#34;</span>
+	<span style=color:#2aa198>&#34;log&#34;</span>
+	<span style=color:#2aa198>&#34;net/http&#34;</span>
+)
+
+<span style=color:#268bd2>func</span> <span style=color:#268bd2>main</span>() {
+	router <span style=color:#719e07>:=</span> <span style=color:#268bd2>NewRouter</span>()
+	router.<span style=color:#268bd2>Handle</span>(<span style=color:#2aa198>&#34;/home&#34;</span>, <span style=color:#2aa198>&#34;GET&#34;</span>, http.<span style=color:#268bd2>HandlerFunc</span>(home))
+	router.<span style=color:#268bd2>Handle</span>(<span style=color:#2aa198>&#34;/about&#34;</span>, <span style=color:#2aa198>&#34;GET&#34;</span>, http.<span style=color:#268bd2>HandlerFunc</span>(about))
+
+	http.<span style=color:#268bd2>Handle</span>(<span style=color:#2aa198>&#34;/&#34;</span>, router)
+
+	addr <span style=color:#719e07>:=</span> fmt.<span style=color:#268bd2>Sprintf</span>(<span style=color:#2aa198>&#34;localhost:%v&#34;</span>, <span style=color:#2aa198>8080</span>)
+	srv <span style=color:#719e07>:=</span> <span style=color:#719e07>&amp;</span>http.Server{
+		Addr:    addr,
+		Handler: http.DefaultServeMux,
+	}
+	log.<span style=color:#268bd2>Printf</span>(<span style=color:#2aa198>&#34;Start server on: %v&#34;</span>, addr)
+	log.<span style=color:#268bd2>Fatal</span>(srv.<span style=color:#268bd2>ListenAndServe</span>())
+}
+
+<span style=color:#268bd2>func</span> <span style=color:#268bd2>home</span>(w http.ResponseWriter, r <span style=color:#719e07>*</span>http.Request) {
+	fmt.<span style=color:#268bd2>Fprint</span>(w, <span style=color:#2aa198>&#34;home\n&#34;</span>)
+}
+
+<span style=color:#268bd2>func</span> <span style=color:#268bd2>about</span>(w http.ResponseWriter, r <span style=color:#719e07>*</span>http.Request) {
+	fmt.<span style=color:#268bd2>Fprint</span>(w, <span style=color:#2aa198>&#34;about\n&#34;</span>)
+}
+</code></pre></td></tr></table></div></div><p>This router fix the caveats found in the standard router:</p><div class=highlight><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-txt data-lang=txt>&gt; $ curl localhost:8080/home
+home
+
+&gt; $ curl localhost:8080/about
+about
+
+&gt; $ curl localhost:8080/about/
+about
+
+&gt; $ curl localhost:8080/123
+404 not found
+</code></pre></div><p>This router is a nice base, but it still lacks important features such as middleware support and complex routing pattern.</p><br><br><br><h2 id=part-2---extending-the-router>Part 2 - Extending the router <a class=anchor href=#part-2---extending-the-router>#</a></h2><hr><p>In this part we focuses on extending the router built on Part 1. I will guide you to refactor the base router to support middlewares
+and complex pattern matching.</p><h3 id=url-parameters>URL parameters <a class=anchor href=#url-parameters>#</a></h3><p>The URL parameters correspond to elements/components of the URL path that are dynamic. For instance <code>/book/:id</code>, where <code>:id</code> is a URL-safe parameter (eg. a number)
+used to identify a <code>book</code> entity. Our router should be able to parse <code>:id</code> and pass the values to the handler.</p><p>On top of that we would also like to provide a validation schema for this parameter.
+For instance <code>:id</code> could only be a number between 0 and 9. This is how I would like to declare the endpoint:</p><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050">1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">8
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#268bd2>func</span> <span style=color:#268bd2>main</span>() {
+	router <span style=color:#719e07>:=</span> <span style=color:#268bd2>NewRouter</span>()
+
+	<span style=color:#586e75>// the URL parameter format follows /:name:regex
+</span><span style=color:#586e75></span>	router.<span style=color:#268bd2>Handle</span>(<span style=color:#2aa198>&#34;/book/:id:^[0-9]$&#34;</span>, <span style=color:#2aa198>&#34;GET&#34;</span>, http.<span style=color:#268bd2>HandlerFunc</span>(home))
+
+	<span style=color:#586e75>// ...
+</span><span style=color:#586e75></span>}
+</code></pre></td></tr></table></div></div><p>The feature is not completly straightforward because we actually need two mechanisms:</p><ul><li>Parsing and matching of regular expressions</li><li>Passing custom parsed values from the router to handlers</li></ul><h4 id=parse>Parse <a class=anchor href=#parse>#</a></h4><p>First the router&rsquo;s trie needs a new field for mapping regular expressions to URL components.
+This new field is <code>regex</code> which maps a string (eg. <code>:id</code>) to a regex (eg. <code>^[0-9]$</code>)</p><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">13
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#268bd2>type</span> node <span style=color:#268bd2>struct</span> {
+	handlers <span style=color:#268bd2>map</span>[<span style=color:#dc322f>string</span>]http.Handler
+	leaves   <span style=color:#268bd2>map</span>[<span style=color:#dc322f>string</span>]<span style=color:#719e07>*</span>node
+	regex    <span style=color:#268bd2>map</span>[<span style=color:#dc322f>string</span>]<span style=color:#719e07>*</span>regexp.Regexp
+}
+
+<span style=color:#268bd2>func</span> <span style=color:#268bd2>newNode</span>() <span style=color:#719e07>*</span>node {
+	<span style=color:#719e07>return</span> <span style=color:#719e07>&amp;</span>node{
+		handlers: <span style=color:#268bd2>map</span>[<span style=color:#dc322f>string</span>]http.Handler{},
+		leaves:   <span style=color:#268bd2>map</span>[<span style=color:#dc322f>string</span>]<span style=color:#719e07>*</span>node{},
+		regex:    <span style=color:#268bd2>map</span>[<span style=color:#dc322f>string</span>]<span style=color:#719e07>*</span>regexp.Regexp{},
+	}
+}
+</code></pre></td></tr></table></div></div><p>The node structure has changed so we need to update the methods of to use the new <code>regex</code> field.</p><p><code>getLeaf</code> function returns a node&rsquo;s leaf or nil, matching an URL component. With the support of URL-parameter, <code>getLeaf</code>
+should also look for matching regular expression.</p><p>If argument <code>v</code> is not found in the node&rsquo;s <code>leaves</code> then it is looked for in the node&rsquo;s <code>regex</code>.
+If a regex match, then the leaf whose mapped to the &lsquo;regex key&rsquo; is returned along with the URL parameter name and value.</p><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">11
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#268bd2>func</span> (node <span style=color:#719e07>*</span>node) <span style=color:#268bd2>getLeaf</span>(v <span style=color:#dc322f>string</span>) (<span style=color:#719e07>*</span>node, []<span style=color:#dc322f>string</span>) {
+	<span style=color:#719e07>if</span> node, ok <span style=color:#719e07>:=</span> node.leaves[v]; ok {
+		<span style=color:#719e07>return</span> node, <span style=color:#cb4b16>nil</span>
+	}
+	<span style=color:#719e07>for</span> key, regex <span style=color:#719e07>:=</span> <span style=color:#719e07>range</span> node.regex {
+		<span style=color:#719e07>if</span> regex.<span style=color:#268bd2>MatchString</span>(v) {
+			<span style=color:#719e07>return</span> node.leaves[key], []<span style=color:#dc322f>string</span>{key, v}
+		}
+	}
+	<span style=color:#719e07>return</span> <span style=color:#cb4b16>nil</span>, <span style=color:#cb4b16>nil</span>
+}
+</code></pre></td></tr></table></div></div><p>For instance, given the following node and <code>v=5</code>, <code>getLeaf</code> would return <code>*node, map[id: 5]</code>:</p><div class=highlight><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-txt data-lang=txt>{
+	handlers:   []
+	leaves:     {&#39;:id&#39;: *node }
+	regex:      {&#39;:id&#39;: &#39;^[0-9]$&#39;}
+}
+</code></pre></div><p>Then we need to update the node <code>append</code> method to look for complex pattern and create the regex.</p><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">17
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">18
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">19
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">20
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">21
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">22
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">23
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">24
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">25
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">26
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">27
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">28
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">29
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#268bd2>func</span> <span style=color:#268bd2>parse</span>(c <span style=color:#dc322f>string</span>) (<span style=color:#dc322f>string</span>, <span style=color:#719e07>*</span>regexp.Regexp) {
+	<span style=color:#719e07>if</span> <span style=color:#b58900>string</span>(c[<span style=color:#2aa198>0</span>]) <span style=color:#719e07>==</span> <span style=color:#2aa198>&#34;:&#34;</span> {
+		<span style=color:#586e75>// Given c=&#34;:id:^[0-9]$&#34;, then pattern=[&#34;id&#34; &#34;^[0-9]$&#34;]
+</span><span style=color:#586e75></span>		pattern <span style=color:#719e07>:=</span> strings.<span style=color:#268bd2>Split</span>(c[<span style=color:#2aa198>1</span>:], <span style=color:#2aa198>&#34;:&#34;</span>)
+		<span style=color:#719e07>if</span> re, err <span style=color:#719e07>:=</span> regexp.<span style=color:#268bd2>Compile</span>(pattern[<span style=color:#2aa198>1</span>]); err <span style=color:#719e07>==</span> <span style=color:#cb4b16>nil</span> {
+			<span style=color:#719e07>return</span> pattern[<span style=color:#2aa198>0</span>], re
+		}
+	}
+	<span style=color:#719e07>return</span> c, <span style=color:#cb4b16>nil</span>
+}
+
+<span style=color:#268bd2>func</span> (node <span style=color:#719e07>*</span>node) <span style=color:#b58900>append</span>(path []<span style=color:#dc322f>string</span>) <span style=color:#719e07>*</span>node {
+	<span style=color:#719e07>if</span> <span style=color:#b58900>len</span>(path) <span style=color:#719e07>==</span> <span style=color:#2aa198>0</span> {
+		<span style=color:#719e07>return</span> node
+	}
+	component, regex <span style=color:#719e07>:=</span> <span style=color:#268bd2>parse</span>(path[<span style=color:#2aa198>0</span>])
+
+	leaf, _ <span style=color:#719e07>:=</span> node.<span style=color:#268bd2>getLeaf</span>(component)
+	<span style=color:#719e07>if</span> leaf <span style=color:#719e07>==</span> <span style=color:#cb4b16>nil</span> {
+		node.leaves[component] = <span style=color:#268bd2>newNode</span>()
+		leaf = node.leaves[component]
+
+		<span style=color:#719e07>if</span> regex <span style=color:#719e07>!=</span> <span style=color:#cb4b16>nil</span> {
+			node.regex[component] = regex
+		}
+	}
+
+	<span style=color:#719e07>return</span> leaf.<span style=color:#b58900>append</span>(path[<span style=color:#2aa198>1</span>:])
+}
+</code></pre></td></tr></table></div></div><p>The <code>append</code> method is similar to the previous version. We just added a new condition to handle regex elements contained in the <code>path</code> argument.
+In the case a path element is a regex, then the function <code>parse</code> returns the value of the element and a compiled regex.</p><h4 id=match>Match <a class=anchor href=#match>#</a></h4><p>Now that the router is able to create paths containing complex pattern (eg. <code>/book/:id:^[0-9]$</code>), we need a way to pass the matched URL parameters
+from the router to the handlers. For that we will use the <code>context</code> standard library. Context allow the creation of &lsquo;request scoped&rsquo; context for
+defining variables, deadlines, etc&mldr; In short, a context is a collection of meta data and methods, attached to a specific request.</p><p>We first implement a <code>Vars</code> method that will return the <code>"vars"</code> value of a request context. This function will be used to get the
+URL parameters inside the handlers.</p><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050">1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">6
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#268bd2>func</span> <span style=color:#268bd2>Vars</span>(r <span style=color:#719e07>*</span>http.Request) <span style=color:#268bd2>map</span>[<span style=color:#dc322f>string</span>]<span style=color:#dc322f>string</span> {
+	<span style=color:#719e07>if</span> vars <span style=color:#719e07>:=</span> r.<span style=color:#268bd2>Context</span>().<span style=color:#268bd2>Value</span>(<span style=color:#2aa198>&#34;vars&#34;</span>); vars <span style=color:#719e07>!=</span> <span style=color:#cb4b16>nil</span> {
+		<span style=color:#719e07>return</span> vars.(<span style=color:#268bd2>map</span>[<span style=color:#dc322f>string</span>]<span style=color:#dc322f>string</span>) <span style=color:#586e75>// type cast
+</span><span style=color:#586e75></span>	}
+	<span style=color:#719e07>return</span> <span style=color:#cb4b16>nil</span>
+}
+</code></pre></td></tr></table></div></div><p>For instance, given:</p><ul><li>Endpoint: <code>/home/:id:^[0-9]$</code></li><li>Request: <code>/home/5</code></li></ul><p>The <code>Vars</code> function would return <code>map["id": "5"]</code></p><p>Then we update the <code>ServeHTTP</code> and <code>match</code> methods to use the context variable &ldquo;vars&rdquo;.</p><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">17
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">18
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">19
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">20
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">21
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">22
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">23
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">24
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#268bd2>func</span> (router <span style=color:#719e07>*</span>Router) <span style=color:#268bd2>ServeHTTP</span>(w http.ResponseWriter, r <span style=color:#719e07>*</span>http.Request) {
+	<span style=color:#719e07>defer</span> <span style=color:#268bd2>func</span>() {
+		<span style=color:#719e07>if</span> err <span style=color:#719e07>:=</span> <span style=color:#b58900>recover</span>(); err <span style=color:#719e07>!=</span> <span style=color:#cb4b16>nil</span> {
+			http.<span style=color:#268bd2>Error</span>(w, <span style=color:#2aa198>&#34;server error&#34;</span>, http.StatusInternalServerError)
+		}
+	}()
+
+	handler <span style=color:#719e07>:=</span> http.<span style=color:#268bd2>NotFoundHandler</span>()
+	vars <span style=color:#719e07>:=</span> <span style=color:#268bd2>map</span>[<span style=color:#dc322f>string</span>]<span style=color:#dc322f>string</span>{}
+
+	<span style=color:#719e07>if</span> h <span style=color:#719e07>:=</span> router.<span style=color:#268bd2>match</span>(r, vars); h <span style=color:#719e07>!=</span> <span style=color:#cb4b16>nil</span> {
+		handler = h
+	}
+
+	ctx <span style=color:#719e07>:=</span> context.<span style=color:#268bd2>WithValue</span>(r.<span style=color:#268bd2>Context</span>(), <span style=color:#2aa198>&#34;vars&#34;</span>, vars)
+	handler.<span style=color:#268bd2>ServeHTTP</span>(w, r.<span style=color:#268bd2>WithContext</span>(ctx))
+}
+
+<span style=color:#268bd2>func</span> (router <span style=color:#719e07>*</span>Router) <span style=color:#268bd2>match</span>(r <span style=color:#719e07>*</span>http.Request, vars <span style=color:#268bd2>map</span>[<span style=color:#dc322f>string</span>]<span style=color:#dc322f>string</span>) http.Handler {
+	<span style=color:#719e07>if</span> node <span style=color:#719e07>:=</span> router.trie.<span style=color:#268bd2>search</span>(<span style=color:#268bd2>split</span>(r.URL.Path), vars); node <span style=color:#719e07>!=</span> <span style=color:#cb4b16>nil</span> {
+		<span style=color:#719e07>return</span> node.handlers[r.Method]
+	}
+	<span style=color:#719e07>return</span> <span style=color:#cb4b16>nil</span>
+}
+</code></pre></td></tr></table></div></div><p>Finally, the node method <code>search</code> append the parsed URL parameters in the <code>vars</code> map when a pattern is found.</p><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">17
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">18
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#268bd2>func</span> (node <span style=color:#719e07>*</span>node) <span style=color:#268bd2>search</span>(path []<span style=color:#dc322f>string</span>, vars <span style=color:#268bd2>map</span>[<span style=color:#dc322f>string</span>]<span style=color:#dc322f>string</span>) <span style=color:#719e07>*</span>node {
+	<span style=color:#719e07>if</span> <span style=color:#b58900>len</span>(path) <span style=color:#719e07>==</span> <span style=color:#2aa198>0</span> {
+		<span style=color:#719e07>return</span> node
+	}
+
+	leaf, pattern <span style=color:#719e07>:=</span> node.<span style=color:#268bd2>getLeaf</span>(path[<span style=color:#2aa198>0</span>])
+	<span style=color:#719e07>if</span> leaf <span style=color:#719e07>==</span> <span style=color:#cb4b16>nil</span> {
+		<span style=color:#719e07>return</span> <span style=color:#cb4b16>nil</span>
+	}
+
+	<span style=color:#719e07>if</span> pattern <span style=color:#719e07>!=</span> <span style=color:#cb4b16>nil</span> {
+        <span style=color:#586e75>// given endpoint /:id:^[0-9]$ and request /5
+</span><span style=color:#586e75></span>        <span style=color:#586e75>// pattern[0]= &#34;id&#34; pattern[1]= &#34;5&#34;
+</span><span style=color:#586e75></span>		vars[pattern[<span style=color:#2aa198>0</span>]] = pattern[<span style=color:#2aa198>1</span>]
+	}
+
+	<span style=color:#719e07>return</span> leaf.<span style=color:#268bd2>search</span>(path[<span style=color:#2aa198>1</span>:], vars)
+}
+</code></pre></td></tr></table></div></div><br><p>The feature is complete, we are able to test it with a simple web server:</p><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">13
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#268bd2>func</span> <span style=color:#268bd2>main</span>() {
+	router <span style=color:#719e07>:=</span> <span style=color:#268bd2>NewRouter</span>()
+	http.<span style=color:#268bd2>Handle</span>(<span style=color:#2aa198>&#34;/&#34;</span>, router)
+
+	router.<span style=color:#268bd2>Handle</span>(<span style=color:#2aa198>&#34;/book/:id:^[0-9]{1,3}$&#34;</span>, <span style=color:#2aa198>&#34;GET&#34;</span>, http.<span style=color:#268bd2>HandlerFunc</span>(book))
+
+	<span style=color:#586e75>// ListenAndServe
+</span><span style=color:#586e75></span>}
+
+<span style=color:#268bd2>func</span> <span style=color:#268bd2>book</span>(w http.ResponseWriter, r <span style=color:#719e07>*</span>http.Request) {
+	vars <span style=color:#719e07>:=</span> <span style=color:#268bd2>Vars</span>(r)
+	fmt.<span style=color:#268bd2>Fprintf</span>(w, <span style=color:#2aa198>&#34;book: %s \n&#34;</span>, vars[<span style=color:#2aa198>&#34;id&#34;</span>])
+}
+</code></pre></td></tr></table></div></div><p>Few examples:</p><div class=highlight><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-txt data-lang=txt>&gt; $ curl localhost:8080/home/456
+book: 456
+
+&gt; $ curl localhost:8080/home/3
+book: 3
+
+&gt; $ curl localhost:8080/home/abc
+404 page not found
+
+&gt; $ curl localhost:8080/home/1234
+404 page not found
+</code></pre></div><p>The server returned a <code>NotFound</code> error for the requests with <code>:id</code> that was not a sequence of 1-to-3 digits.</p><br><br><br><h3 id=middlewares>Middlewares <a class=anchor href=#middlewares>#</a></h3><p>Middlewares are very common when designing web services. They are basically piece of logic that lies between the a router and a handler.
+The following application logic are usually carried via middlewares:</p><ul><li>CORS</li><li>User authentication / authorization</li><li>Logging / monitoring</li><li>Translation</li></ul><p>A middleware function signature is just <code>func middleware(h http.Handler) http.Handler</code>.
+It simply is a function that takes a handler and return a decorated handler. Nothing more.</p><p>Because the signature is &ldquo;bijective&rdquo;, it is easy to chain middlewares along.</p><p>The first step is to extend the router object and define a <code>middleware</code> type.
+Then we create a new router method <code>Use</code> that append a middleware to a router instance.</p><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">17
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#268bd2>type</span> middleware = <span style=color:#268bd2>func</span>(h http.Handler) http.Handler
+
+<span style=color:#268bd2>type</span> Router <span style=color:#268bd2>struct</span> {
+	trie        <span style=color:#719e07>*</span>node
+	middlewares []middleware
+}
+
+<span style=color:#268bd2>func</span> <span style=color:#268bd2>NewRouter</span>() <span style=color:#719e07>*</span>Router {
+	<span style=color:#719e07>return</span> <span style=color:#719e07>&amp;</span>Router{
+		trie:        <span style=color:#268bd2>newNode</span>(),
+		middlewares: [<span style=color:#719e07>*</span>middleware{},
+	}
+}
+
+<span style=color:#268bd2>func</span> (router <span style=color:#719e07>*</span>Router) <span style=color:#268bd2>Use</span>(m middleware) {
+	router.middlewares = <span style=color:#b58900>append</span>(router.middlewares, m)
+}
+</code></pre></td></tr></table></div></div><p>Finally, the last step is to apply the middleware to the handler:</p><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">15
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#268bd2>func</span> (router <span style=color:#719e07>*</span>Router) <span style=color:#268bd2>ServeHTTP</span>(w http.ResponseWriter, r <span style=color:#719e07>*</span>http.Request) {
+    <span style=color:#586e75>// defer...
+</span><span style=color:#586e75></span>	handler <span style=color:#719e07>:=</span> http.<span style=color:#268bd2>NotFoundHandler</span>()
+
+	<span style=color:#719e07>if</span> h <span style=color:#719e07>:=</span> router.<span style=color:#268bd2>match</span>(r); h <span style=color:#719e07>!=</span> <span style=color:#cb4b16>nil</span> {
+		handler = h
+
+		<span style=color:#586e75>// Apply middlewares
+</span><span style=color:#586e75></span>		<span style=color:#719e07>for</span> _, m <span style=color:#719e07>:=</span> <span style=color:#719e07>range</span> router.middlewares {
+			handler = <span style=color:#268bd2>m</span>(handler)
+		}
+	}
+
+	handler.<span style=color:#268bd2>ServeHTTP</span>(w, r)
+}
+</code></pre></td></tr></table></div></div><br><p>The feature is complete, we can test it with a simple web server:</p><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">17
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">18
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">19
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">20
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">21
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">22
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">23
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#268bd2>func</span> <span style=color:#268bd2>main</span>() {
+	router <span style=color:#719e07>:=</span> <span style=color:#268bd2>NewRouter</span>()
+	router.<span style=color:#268bd2>Handle</span>(<span style=color:#2aa198>&#34;/home&#34;</span>, <span style=color:#2aa198>&#34;GET&#34;</span>, http.<span style=color:#268bd2>HandlerFunc</span>(home))
+	
+	router.<span style=color:#268bd2>Use</span>(helloMiddleware)
+	<span style=color:#586e75>// ... ListenAndServe
+</span><span style=color:#586e75></span>}
+
+<span style=color:#268bd2>func</span> <span style=color:#268bd2>home</span>(w http.ResponseWriter, r <span style=color:#719e07>*</span>http.Request) {
+	fmt.<span style=color:#268bd2>Fprint</span>(w, <span style=color:#2aa198>&#34;hello world!\n&#34;</span>)
+}
+
+<span style=color:#268bd2>func</span> <span style=color:#268bd2>helloMiddleware</span>(h http.Handler) http.Handler {
+	<span style=color:#719e07>return</span> http.<span style=color:#268bd2>HandlerFunc</span>(<span style=color:#268bd2>func</span>(w http.ResponseWriter, r <span style=color:#719e07>*</span>http.Request) {
+        <span style=color:#586e75>// before the handler is executed
+</span><span style=color:#586e75></span>		w.<span style=color:#268bd2>Write</span>([]<span style=color:#b58900>byte</span>(<span style=color:#2aa198>&#34;I am a middleware!\n&#34;</span>))
+		
+        h.<span style=color:#268bd2>ServeHTTP</span>(w, r)
+
+        <span style=color:#586e75>// after the handler is executed
+</span><span style=color:#586e75></span>		w.<span style=color:#268bd2>Write</span>([]<span style=color:#b58900>byte</span>(<span style=color:#2aa198>&#34;Bip bip bop!\n&#34;</span>))
+	})
+}
+</code></pre></td></tr></table></div></div><p>An example:</p><div class=highlight><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-txt data-lang=txt>&gt; $ curl localhost:8080/home                      
+
+I am a middleware!
+hello world!
+Bip bip bop!
+</code></pre></div><p>As expected, the handler <code>home</code> was surrounded by the middleware writings.</p><p>This is a silly example. The point of a middleware is to perform intermediate logics before and after handlers. This is convenient because joined with
+context, middlewares can append new context variables to the requests before they reache the handlers.</p><p>Typically, this is used when authenticating user. A user is authenticated by a middleware, then the user entity is passed to the handlers via a context variable.</p><p>A dummy authentication middleware would look like:</p><div class=highlight><div style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#495050">10
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#268bd2>func</span> <span style=color:#268bd2>Authentication</span>(h http.Handler) http.Handler {
+	<span style=color:#719e07>return</span> http.<span style=color:#268bd2>HandlerFunc</span>(<span style=color:#268bd2>func</span>(w http.ResponseWriter, r <span style=color:#719e07>*</span>http.Request) {
+		<span style=color:#719e07>if</span> t <span style=color:#719e07>:=</span> r.Header.<span style=color:#268bd2>Get</span>(<span style=color:#2aa198>&#34;token&#34;</span>); t <span style=color:#719e07>!=</span> <span style=color:#2aa198>&#34;SECRET-ACCESS-TOKEN&#34;</span> {
+			w.<span style=color:#268bd2>WriteHeader</span>(http.StatusUnauthorized)
+			<span style=color:#719e07>return</span>
+		}
+        w.<span style=color:#268bd2>Write</span>([]<span style=color:#b58900>byte</span>(<span style=color:#2aa198>&#34;Authorized\n&#34;</span>))
+		h.<span style=color:#268bd2>ServeHTTP</span>(w, r)
+	})
+}
+</code></pre></td></tr></table></div></div><p>And return the following reponses:</p><div class=highlight><pre style=color:#93a1a1;background-color:#002b36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-txt data-lang=txt>&gt; $ curl localhost:8080/home
+401 Unauthorized
+
+&gt; $ curl -H &#34;token: SECRET-ACCESS-TOKEN&#34;  localhost:8080/home
+Authorized
+</code></pre></div><br><br><br><h2 id=conclusion>Conclusion <a class=anchor href=#conclusion>#</a></h2><p>Go philosophy and community advocate simplicity and minimizing dependency when possible.
+It does not mean one should feel guilty for relying on an external library, however, it means one should always
+carefully evaluate the tradeoffs of using a lib.</p><p>In this article, we have implemented a tri-based router, that allows more complex routing pattern than
+the Go standard router, without relying on an external routing package.
+Creating a custom router is simple and the implementation is no more than 200 LOC which makes it easy to maintain in the long term.</p></div></div></div></div><footer class=footer><div class=footer__inner><hr><div class="copyright copyright--user">© 2021 - Martin Grd - <a href=https://github.com/9op/9op.github.io>source</a></div></div></footer><script src=https://9op.github.io/assets/main.js></script></div></body></html>
