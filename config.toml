@@ -10,7 +10,9 @@ copyright= "© 2021 - Martin Grd - <a href='https://github.com/9op/9op.github.io
     lineNos = true
     style = "solarized-dark"
     tabWidth = 4
-
+  [markup.tableOfContents]
+    endLevel = 4
+    ordered = false
 
 [params] 
   contentTypeName = "post"

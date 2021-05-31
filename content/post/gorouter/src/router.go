@@ -12,6 +12,13 @@ func split(path string) []string {
 	return strings.Split(path, "/")
 }
 
+func Vars(r *http.Request) map[string]string {
+	if vars := r.Context().Value("vars"); vars != nil {
+		return vars.(map[string]string) // type cast
+	}
+	return nil
+}
+
 type Router struct {
 	trie *node
 	// ...
