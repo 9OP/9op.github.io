@@ -1,12 +1,12 @@
 import unittest
 
 from flask import json, session, g
+from hashlib import sha256
 from app import (
-    create_app,
     Users,
     Tokens,
-    require,
     authenticate,
+    create_app,
 )
 
 
@@ -15,34 +15,13 @@ class Test(unittest.TestCase):
         super().setUp()
         Users.clear()
         Tokens.clear()
-
-
-class TestRequire(Test):
-    def test_success(self):
-        data = {
-            "email": "user@mail.com",
-            "name": "user",
-            "other": "123",
-        }
-        keys = ["email", "name"]
-
-        self.assertEqual(
-            require(keys, data), ({"email": data["email"], "name": data["name"]}, None)
-        )
-
-    def test_missing_params(self):
-        data = {"email": "user@mail.com"}
-        keys = ["email", "name"]
-
-        self.assertEqual(
-            require(keys, data), (None, (f"Invalid parameter: name missing", 400))
-        )
+        self.app = create_app()
+        self.client = self.app.test_client()
 
 
 class TestAuthenticate(Test):
     def setUp(self):
         super().setUp()
-        self.app = create_app()
         self.token = "token"
         self.user = {"email": "user@mail.com", "name": "user"}
 
@@ -119,8 +98,6 @@ def payload(data={}, headers={}, token=""):
 class TestSignup(Test):
     def setUp(self):
         super().setUp()
-        self.app = create_app()
-        self.client = self.app.test_client()
 
     def test_success(self):
         user = {"email": "user@mail.com", "name": "user", "password": "password123"}
@@ -139,30 +116,127 @@ class TestSignup(Test):
         self.assertEqual(response.data, b"User user@mail.com already exists")
         self.assertEqual(len(Users), 1)
 
-    # unittest is standard but it doesnt not support parametrized tests...
-    def test_missing_parameter(self):
-        def _test_missing_parameter(user, key):
-            response = self.client.post("/auth/signup", **payload(user))
-            self.assertEqual(response.status_code, 400)
-            self.assertEqual(
-                response.data, f"Invalid parameter: {key} missing".encode()
-            )
 
-        _test_missing_parameter({"name": "user", "password": "123"}, "email")
-        _test_missing_parameter({"email": "user@mail.com", "password": "123"}, "name")
-        _test_missing_parameter({"email": "user@mail.com", "name": "user"}, "password")
+class TestSignin(Test):
+    def setUp(self):
+        super().setUp()
+
+        self.user = {
+            "email": "user@mail.com",
+            "name": "user",
+            "password": sha256(b"password").hexdigest(),
+        }
+        Users[self.user["email"]] = self.user
+
+    def test_success(self):
+        response = self.client.post(
+            "/auth/signin",
+            **payload({"email": "user@mail.com", "password": "password"}),
+        )
+
+        session_cookie = next(
+            (cookie for cookie in self.client.cookie_jar if cookie.name == "session"),
+            None,
+        )
+
+        token = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Tokens[self.user["email"]], [token])
+        self.assertIsNotNone(session_cookie.value)
+
+    def test_wrong_password(self):
+        response = self.client.post(
+            "/auth/signin",
+            **payload({"email": "user@mail.com", "password": "wrong"}),
+        )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data, b"Unauthorized")
+
+    def test_no_user(self):
+        response = self.client.post(
+            "/auth/signin",
+            **payload({"email": "wronguser@mail.com", "password": "password"}),
+        )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data, b"Unauthorized")
 
 
-class TestSignin(unittest.TestCase):
-    pass
+class TestSignout(Test):
+    def setUp(self):
+        super().setUp()
+
+        self.user = {
+            "email": "user@mail.com",
+            "name": "user",
+            "password": sha256(b"password").hexdigest(),
+        }
+        Users[self.user["email"]] = self.user
+        Tokens[self.user["email"]] = "token"
+
+    def test_success(self):
+        with self.client.session_transaction() as sess:
+            sess["user"] = self.user["email"]
+        response = self.client.get("/auth/signout")
+
+        session_cookie = next(
+            (cookie for cookie in self.client.cookie_jar if cookie.name == "session"),
+            None,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, b"Signout")
+        self.assertIsNone(session_cookie)
 
 
-class TestSignout(unittest.TestCase):
-    pass
+class TestWhoami(Test):
+    def setUp(self):
+        super().setUp()
 
+        self.user = {
+            "email": "user@mail.com",
+            "name": "user",
+            "password": sha256(b"password").hexdigest(),
+        }
+        Users[self.user["email"]] = self.user
+        Tokens[self.user["email"]] = "token"
 
-class TestWhoami(unittest.TestCase):
-    pass
+    def test_success(self):
+        with self.client.session_transaction() as sess:
+            sess["user"] = self.user["email"]
+        response = self.client.get("/auth/whoami", **payload(token="token"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.get_json(),
+            {
+                "email": self.user["email"],
+                "name": self.user["name"],
+            },
+        )
+
+    def test_missing_cookie(self):
+        response = self.client.get("/auth/whoami", **payload(token="token"))
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data, b"Authentication cookie missing")
+
+    def test_missing_bearer(self):
+        with self.client.session_transaction() as sess:
+            sess["user"] = self.user["email"]
+        response = self.client.get("/auth/whoami")
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data, b"Authentication bearer missing")
+
+    def test_invalid_bearer(self):
+        with self.client.session_transaction() as sess:
+            sess["user"] = self.user["email"]
+        response = self.client.get("/auth/whoami", **payload(token="invalidtoken"))
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data, b"Invalid token")
 
 
 if __name__ == "__main__":

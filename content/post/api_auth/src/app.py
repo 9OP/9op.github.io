@@ -10,17 +10,6 @@ Users = defaultdict(dict)
 Tokens = defaultdict(list)
 
 
-# Request body validation
-def require(keys, data):
-    params = dict()
-    for key in keys:
-        value = data.get(key)
-        if not value:
-            return None, (f"Invalid parameter: {key} missing", 400)
-        params[key] = value
-    return params, None
-
-
 # Authentication middleware
 def authenticate(func):
     @functools.wraps(func)
@@ -48,9 +37,7 @@ def authenticate(func):
 
 
 def signup():
-    params, err = require(["name", "email", "password"], request.json)
-    if err:
-        return err
+    params = request.json
 
     if params["email"] in Users:
         return f"User {params['email']} already exists", 409
@@ -65,14 +52,12 @@ def signup():
 
 
 def signin():
-    params, err = require(["email", "password"], request.json)
-    if err:
-        return err
-    
+    params = request.json
+
     user = Users.get(params["email"])
 
     if not user or user["password"] != sha256(params["password"].encode()).hexdigest():
-        return "Unauthorized", 403
+        return "Unauthorized", 401
 
     token = str(uuid4())  # generate random token
     Tokens[user["email"]].append(token)
@@ -82,7 +67,7 @@ def signin():
 
 def signout():
     session.clear()
-    return 200
+    return "Signout", 200
 
 
 @authenticate
@@ -98,13 +83,13 @@ def whoami():
 def create_app():
     app = Flask(__name__)
     app.secret_key = environ.get("SECRET_KEY", "secret")
-    
+
     auth_api = Blueprint("auth_api", __name__, url_prefix="/auth")
     auth_api.route("/signup", methods=["POST"])(signup)
     auth_api.route("/signin", methods=["POST"])(signin)
     auth_api.route("/signout", methods=["GET"])(signout)
     auth_api.route("/whoami", methods=["GET"])(whoami)
-    
+
     app.register_blueprint(auth_api)
 
     return app
