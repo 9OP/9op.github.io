@@ -1,6 +1,6 @@
 Start flask server:
 
-`FLASK_APP=app.py flask run`
+`FLASK_ENV=development flask run`
 
 This is a demo, not suitable for production.
 
@@ -29,3 +29,16 @@ curl -i \
     --request POST \
     --data '{ "email":"user@mail.com", "password":"123456" }' \
     http://localhost:5000/signin
+
+Whoami:
+
+curl -i \
+    --header "Authorization: Bearer 0cf91d94-2c35-40d4-9adc-bac12d10df0b" \
+    --cookie "session=eyJ1c2VyIjoidXNlckBtYWlsLmNvbSJ9.YMXr_Q.suorZM3KeljhkcabYKlN4aRBw-s" \
+    --request GET \
+    http://localhost:5000/whoami
+
+
+## Test
+
+```python -m unittest discover```
