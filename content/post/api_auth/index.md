@@ -35,7 +35,7 @@ This post is about discussing the security vulnerabilities (mostly XSS and CSRF)
 
 {{<linebreak 2 >}}
 
-## Authentication mechanism
+## Authentication
 
 Before diving into the technical questions about security and implementation, let's present a generic approach to authentication.
 
@@ -148,7 +148,7 @@ from flask import Flask, Blueprint
 from collections import defaultdict
 from os import environ
 
-# Database entity
+# Database entities
 Users = defaultdict(dict)
 Tokens = defaultdict(list)
 
@@ -197,7 +197,7 @@ with the `defaultDict` `Users` and `Tokens` (which are sugared hashmap/dictionna
 blocking unauthorized requests.
 
 The architecture is there, now we only need to implement the business logic. I will not focus on `signup`, so you can have a look at it directly in the 
-sources, it is not really relevant since it just append a new user to the `Users` object.
+sources, it is not really relevant since it just append a new user to the `Users` object + hash the password.
 
 {{<linebreak >}}
 
@@ -278,9 +278,41 @@ I am no expert in cryptography but the reason of using `bcrypt` instead of `sha`
 
 ### Signout
 
+There are multiple approachs to signout. I have opted for a `GET` method plus clearing the "session" cookie as well as all issued tokens.
+You might chose to keep the tokens and simply tag them as revoked or apply more complexe logics on which tokens you need to remove etc... 
+
+My signout function is blind stupid, it just get the user from the "session" cookie, remove the tokens associated to that user and 
+clear the "session" cookie. This way we make sure to remove both part of the authentication proof. 
+
+```python
+def signout():
+    Tokens[session.get("user")].clear()
+    session.clear()
+    return "Signout", 200
+```
+
 {{<linebreak >}}
 
 ### Whoami
+
+The whoami controller is decorated with the `authenticate` authentication middleware. This middleware, uppon success, will add the user to the global context `g`.
+The `whoami` method simply get the user from the global context `g` and return a jsonified reponse with the user's `email` and `name`.
+
+```python
+from flask import jsonify, g
+
+@authenticate
+def whoami():
+    user = g.user
+    return jsonify(email=user["email"], name=user["name"]), 200
+```
+
+#curl example
+
+{{<linebreak >}}
+
+Now comes the main piece of this article: the authentication middleware. It is the critical part of the implementation. It should only succeed if the request
+provides the entire authentication proof: token + cookie.
 
 
 

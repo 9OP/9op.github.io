@@ -66,6 +66,7 @@ def signin():
 
 
 def signout():
+    Tokens[session.get("user")].clear()
     session.clear()
     return "Signout", 200
 
