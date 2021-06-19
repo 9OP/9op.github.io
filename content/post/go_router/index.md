@@ -1,8 +1,6 @@
 ---
 draft: false
 toc: true
-layout: "single"
-type: "post"
 title: "Custom Go HTTP Router"
 date: "2021-05-30"
 readingTime: 30

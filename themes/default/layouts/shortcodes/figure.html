@@ -1,8 +1,7 @@
-{{ if .Get "src" }}
-  <figure class="{{ with .Get "position"}}{{ . }}{{ else -}} left {{- end }}" >
-    <img src="{{ .Get "src" | safeURL }}" {{ with .Get "alt" }} alt="{{ . | plainify }}" {{ end }} {{ with .Get "style" }} style="{{ . | safeCSS }}" {{ end }} />
-    {{ if .Get "caption" }}
-      <figcaption class="{{ with .Get "captionPosition"}}{{ . }}{{ else -}} center {{- end }}" {{ with .Get "captionStyle" }} style="{{ . | safeCSS }}" {{ end }}>{{ .Get "caption" | markdownify }}</figcaption>
-    {{ end }}
-  </figure>
-{{ end }}
+{{ $src := .Get "src" }}
+<figure class="center" >
+  <img src="{{  print (printf `resources/%s/` $.Site.Params.defaultTheme) $src  }}" class="img-toggle" />
+  {{ if .Get "caption" }}
+    <figcaption class="center">{{ .Get "caption" | markdownify }}</figcaption>
+  {{ end }}
+</figure>
