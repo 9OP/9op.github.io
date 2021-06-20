@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>authentication on Martin</title><link>https://9op.github.io/tags/authentication/</link><description>Recent content in authentication on Martin</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><copyright>Copyright © 2021 - Martin Guyard</copyright><lastBuildDate>Sat, 19 Jun 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://9op.github.io/tags/authentication/index.xml" rel="self" type="application/rss+xml"/><item><title>Secure API authentication</title><link>https://9op.github.io/post/api_auth/</link><pubDate>Sat, 19 Jun 2021 00:00:00 +0000</pubDate><guid>https://9op.github.io/post/api_auth/</guid><description>
+&lt;img src="https://9op.github.io/cover.jpg"/>
+&lt;!-- raw HTML omitted -->
+&lt;p>API authentication is a critical component of any web service because it impacts the integrity of users' data. It is not a topic to be overlooked
+and though you may find many tutorials on the web about this, most of them avoid the security question and copy-paste each other mistakes.
+I am writing this post, so from now on, it can be copy-pasted by my fellow wannabe tech guru and spread useful information&amp;hellip;&lt;/p></description></item></channel></rss>
