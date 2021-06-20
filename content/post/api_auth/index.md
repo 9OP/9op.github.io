@@ -261,7 +261,7 @@ The authentication proof is composed of:
 - cookie: `session=eyJ0b2tlbiI6IjI1MGNlNDM5LTZhZWEtN...`
 
 
-The token can be stored on the local storage because it is only a part of the authentication proof. 
+The token can be **stored in the browser's local storage** because it is only a part of the authentication proof. 
 The other part is contained in the HTTP-only "session" cookie which cannot be read by JavaScript. 
 
 {{<linebreak>}}
@@ -398,10 +398,62 @@ Invalid token
 
 {{<linebreak 2>}}
 
-#pb 2 step attack: XSS then CSRF -> prevent with handshake route
+## Handshake
+
+As the final part of this post, I would like to assess the vulnerabilities of this system.
+
+At first sight the authentication system is not vulnerable to XSS and CSRF because:
+- XSS can only get the token not the HTTP-only "session" cookie
+- CSRF can only use the cookie but not get the token
+
+Now what if an attacker is able to do both XSS and CSRF? An attacker would first get our token with an XSS attack, then use the token
+in a CSRF attack (by injecting the token directly in the malicious web page).
+
+The last piece our system needs to be safe against this XSS-CSRF kind of attack is a handshake mechanism. It should consist in the client and server agreeing
+on a common secret before each request. 
+
+A handshake prevents a CSRF attack to use a previously breached token, but it also means that for every API requests, a client should initiate a handshake with the server.
+
+```python
+# Authentication middleware
+def authenticate(func):
+    @functools.wraps(func)
+    def inner(*args, **kwargs):
+        # handshake
+        if session.get("handshake") != request.headers.get("handshake", ""):
+            return "Handshake failed", 401
+
+        session.pop("handshake")
+        # ...
+    return inner
+
+def handshake():
+    handshake = str(uuid4())
+    session["handshake"] = handshake
+    return handshake, 200
+
+def create_app():
+    # ...
+    auth_api.route("/handshake", methods=["POST"])(handshake)
+
+    return app
+```
+
+After the handshake is successfull, it is important to remove the handshake token from the "session" cookie: `session.pop("handshake")`. 
+This will force the client to handshake for future request. If the handshake token is not removed in the `authenticate` middleware, 
+the system would again be vulnerable to CSRF.
+
+{{<linebreak 2 >}}
 
 ## Conclusion
-- **An XSS attack would be able to get only a part of the authentication proof: the token, not the cookie.**
-- **A CSRF attack would be able to use on the cookie, not the token, and would fail the authentication proof verification.**
 
-{{<linebreak>}}
+In this post we have investigated common vulnerabilities of API authentication mechanism. In the end there is nothing fundamentally difficult or 
+complex about the proposed implementation. What matters is the state of mind and questions you should ask yourself when designing such systems.
+Security is not an esoteric topic to be leaved at security specialists only, but an entire part of the system design and software architecture.
+
+The demo application of this article proposes a way to prevent XSS and CSRF vulnerabilities, but I have to remind you that they are not the only 
+threat for your app. There are other threats such as SQL injection, session fixation, and others listed by the OWASP top ten, that should also be
+considered when building secure systems.
+
+Web developers should be aware of the common pitfalls regarding web security in order to build more robust and less vulnerable systems. With this blog post
+I hope I contributed to making the web a safer place, and helped fellow developers to improve their systems.

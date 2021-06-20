@@ -14,6 +14,10 @@ Tokens = defaultdict(list)
 def authenticate(func):
     @functools.wraps(func)
     def inner(*args, **kwargs):
+        # handshake
+        if session.get("handshake") != request.headers.get("handshake", ""):
+            return "Handshake failed", 401
+        
         email = session.get("user")
         if not email:
             return "Authentication cookie missing", 401
@@ -33,7 +37,6 @@ def authenticate(func):
 
 #
 # Controllers
-
 
 def signup():
     params = request.json
@@ -71,15 +74,21 @@ def signout():
     return "Signout", 200
 
 
+def handshake():
+    handshake = str(uuid4())
+    session["handshake"] = handshake
+    return handshake, 200
+
+
 @authenticate
 def whoami():
     user = g.user
     return jsonify(email=user["email"], name=user["name"]), 200
 
 
+
 #
 # App factory
-
 
 def create_app():
     app = Flask(__name__)
@@ -89,6 +98,7 @@ def create_app():
     auth_api.route("/signup", methods=["POST"])(signup)
     auth_api.route("/signin", methods=["POST"])(signin)
     auth_api.route("/signout", methods=["GET"])(signout)
+    auth_api.route("/handshake", methods=["POST"])(handshake)
     auth_api.route("/whoami", methods=["GET"])(whoami)
 
     app.register_blueprint(auth_api)
