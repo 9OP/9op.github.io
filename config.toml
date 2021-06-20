@@ -5,6 +5,7 @@ theme = "default"
 paginate = 5
 copyright = "Copyright © 2021 - Martin Guyard"
 
+
 [markup]
   [markup.highlight]
     lineNos = true
