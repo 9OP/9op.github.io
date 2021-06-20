@@ -1,5 +1,5 @@
 .footer {
-  padding: 40px 20px;
+  padding: 20px 20px 40px 20px;
   margin-top: auto;
   flex-grow: 0;
   color: var(--color-secondary);
@@ -7,10 +7,9 @@
   &__inner {
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: space-between;
     margin: 0 auto;
-    width: 760px;
+    width: 960px;
     max-width: 100%;
 
     @media (--tablet) {
@@ -25,24 +24,12 @@
   .copyright {
     display: flex;
     flex-direction: row;
-    align-items: center;
+    justify-content: space-between;
     font-size: 1rem;
 
     &--user {
       margin: auto;
       text-align: center;
-    }
-
-    & > *:first-child:not(:only-child) {
-      border-right: 1px solid;
-      padding-right: 10px;
-      margin-right: 10px;
-
-       @media (--tablet) {
-        border: none;
-        padding: 0;
-        margin: 0;
-      }
     }
 
     @media (--tablet) {

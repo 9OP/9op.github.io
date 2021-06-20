@@ -8,28 +8,19 @@
   {{ end }}
   {{ $paginator := .Paginate (where $PageContext.RegularPages "Type" $contentTypeName) }}
 
-
-
   <div class="posts">
-    {{ if .Content }}
-      <div class="index-content {{ if .Params.framed -}}framed{{- end -}} {{ $PageContext }}">
-        {{ .Content }}     
-      </div>
-    {{ end }}
-
-    <div class="pagination__title">
-      <span class="pagination__title-h"> latest post </span>
-      <hr />
-    </div>
-    <!-- last article -->
-    {{ range first 1 $paginator.Pages.ByDate.Reverse }}
+    {{ range $paginator.Pages.ByDate.Reverse }}
       <div class="post on-list">
         <h1 class="post-title"><a href="{{ .Permalink }}">{{ .Title | markdownify }}</a></h1>
         <div class="post-meta">
-          {{ if .Date | default nil }}
+          {{ if .Date }}
             <span class="post-date">
-              {{ .Date.Format ($.Site.Params.DateFormatSingle | default "2006-01-02") }}
+              {{ .Date.Format ($.Site.Params.DateFormatList | default "2006-01-02") }}
             </span>
+
+            {{ if $.Site.Params.LastModDisplay }}
+              {{ partial "lastmod.html" . }}
+            {{ end }}
           {{ end }}
 
           <span class="post-read-time">
@@ -40,11 +31,21 @@
         {{ if .Params.tags }}
           <span class="post-tags">
             {{ range .Params.tags }}
-              <a href="{{ (urlize (printf `tags/%s` . )) | absURL }}/">#{{ . }}</a>&nbsp;
+              <a href="{{ (urlize (printf "tags/%s" . )) | absURL }}/">#{{ . }}</a>&nbsp;
             {{ end }}
           </span>
         {{ end }}
+
+        <div class="post-description">
+          {{ .Summary }}
+        </div>
+        <div>
+          <a class="read-more button" href="{{ .RelPermalink }}">
+            Read more →
+          </a>
+        </div>
       </div>
     {{ end }}
+    {{ partial "pagination.html" . }}
   </div>
 {{ end }}

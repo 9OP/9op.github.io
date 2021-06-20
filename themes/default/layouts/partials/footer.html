@@ -1,9 +1,10 @@
 <footer class="footer">
   <div class="footer__inner">
     <hr>
-    {{ if $.Site.Copyright }}
-      <div class="copyright copyright--user">{{ $.Site.Copyright | safeHTML }}</div>
-    {{ end }}
+    <div class="copyright">
+      <span>{{ $.Site.Copyright | safeHTML }}</span>
+      <span>{{ $.Site.Params.sources | safeHTML }}</span>
+    </div>
   </div>
 </footer>
 

@@ -30,11 +30,11 @@
         <div class="post-description">
           {{ .Summary }}
         </div>
-          <div>
-            <a class="read-more button" href="{{ .RelPermalink }}">
-              Read more →
-            </a>
-          </div>
+        <div>
+          <a class="read-more button" href="{{ .RelPermalink }}">
+            Read more →
+          </a>
+        </div>
       </div>
     {{ end }}
     {{ partial "pagination.html" . }}
