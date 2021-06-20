@@ -115,7 +115,8 @@ This is a silly example to illustrate CSRF and obviously no serious financial in
 **As a consequence no authentication proof should be stored in cookies**
 
 **Note:** You might have heard of CSRF/XSRF-token. These are very common in the world of MVC (model-view-controller) web framework (eg. Python Django). 
-They are a countermeasure against CSRF for MVC, but they do not really make sense in the context of web API. We will discuss that latter.
+They are a countermeasure against CSRF. The idea of CSRF token is to compare token sent in HTTP-only cookie with token sent in request header.
+If the value mismatch then the request is rejected. It prevents CSRF because, CSRF can only use the cookies indirectly and cannot access the token sent in the header.
 
 {{<linebreak 2>}}
 
@@ -140,7 +141,7 @@ and another part in an **HTTP only** cookie.
 
 ### Architecture
 
-Since this is not a tutorial on Flask, I will not expand on the code, but rather on the logic. Indeed, I decided to use Flask because of its consisennes and clarity. The ideas disclosed in this article can be implemented with your favorite stack be it Node, Go, Ruby, and even Java or PHP if you hate yourself.
+Since this is not a tutorial on Flask, I will not expand on the code itself, but rather on the logic. Indeed, I decided to use Python Flask because of its conciseness and clarity. The ideas disclosed in this article can be implemented with your favorite stack be it Node, Go, Ruby, and even Java or PHP if you hate yourself.
 
 
 ```python
@@ -193,19 +194,19 @@ if __name__ == "__main__":
 ```
 
 This is the archicture we will be working with. There are 4 endpoints (signup, signin, signout and whoami). The database is mocked
-with the `defaultDict` `Users` and `Tokens` (which are sugared hashmap/dictionnary). And `authenticate` is the authentication middleware responsible for 
-blocking unauthorized requests.
+with the `defaultDict` `Users` and `Tokens` (which are sugared hashmaps/dictionnaries). And `authenticate` is the authentication middleware responsible for 
+blocking unauthorized requests (ie. requests failing the authentication proof verification).
 
-The architecture is there, now we only need to implement the business logic. I will not focus on `signup`, so you can have a look at it directly in the 
-sources, it is not really relevant since it just append a new user to the `Users` object + hash the password.
+We only need to implement the business logic. I will not focus on `signup`, so you can have a look at it directly in the 
+sources, it is not really relevant since it just append a new user to the `Users` object and hash the password.
 
 {{<linebreak >}}
 
 ### Signin
 
 Signin logic consists in verifying the user's credentials, creating an access token and creating a "session" cookie. A "session" cookie is Flask being fancy
-and encrypting the cookie with the application's `secret_key`. The "session" cookie is also HTTP-only which means it cannot be read by JavaScript on the client.
-**An HTTP-only cookie is nice because it is not vulnerable to XSS**
+and encrypting the cookie with the application's `secret_key` for us. The "session" cookie is also HTTP-only which means it cannot be read by JavaScript in the browser.
+**An HTTP-only cookie is nice because it is not vulnerable to XSS.**
 
 ```python
 from flask import request, session
@@ -224,19 +225,20 @@ def signin():
     token = str(uuid4())  # generate random token
     Tokens[user["email"]].append(token)
     session["user"] = user["email"]
+    session["token"] = token
     return token, 200
 ```
 
-First step is to get the json body payload of the request. Then we look for a user with the input `email`. Then we compare the hashed 
+First step is to get the json body payload of the request. Then we look for a user in `Users` whose email is the input `email`. Then we compare the hashed 
 password of the found user and return `401 Unauthorized` if the user was not found or the hashed password did not match the one in database.
 
-Finnaly, we create a random unique token `str(uuid4())`, the token is stored in the database and we create an HTTP-only cookie "session" 
-with the user's `email`. Uppon success this endpoint return the generated token.
+Finally, we create a random unique token `str(uuid4())`, the token is stored in the database and we create an HTTP-only cookie "session" 
+with the user's `email` and the generated token. Uppon success this endpoint return the token.
 
 Testing with curl, we got:
 
 ```txt {linenos=false}
->$ curl -i \ 
+> $ curl -i \ 
     --header "Content-Type: application/json" \
     --request POST \
     --data '{ "email":"user@mail.com", "password":"123456" }' \
@@ -246,7 +248,8 @@ HTTP/1.0 200 OK
 Content-Type: text/html; charset=utf-8
 Content-Length: 36
 Vary: Cookie
-Set-Cookie: session=eyJ1c2VyIjoidXNlckBtYWlsLmNvbSJ9.YM582A.5tjE1iE4pxWMcSKh3S86mLph0tk; HttpOnly; Path=/
+Set-Cookie: session=eyJ0b2tlbiI6IjI1MGNlNDM5LTZhZWEtNGQwOC04MjliLTUzMmViNjllYmMzNCIsInVzZXIiOiJ1c2VyQG1haWwuY29tIn0
+    .YM9TtQ.WeDyTF1NNB8elnkZdIffZdQTqbY; HttpOnly; Path=/
 Server: Werkzeug/2.0.1 Python/3.9.5
 Date: Sat, 19 Jun 2021 23:25:12 GMT
 
@@ -255,12 +258,11 @@ Date: Sat, 19 Jun 2021 23:25:12 GMT
 
 The authentication proof is composed of:
 - token: `9d897db6-7520-4deb-a86a-2723b19a4543`
-- session cookie: `eyJ1c2VyIjoidXNlckBtYWlsLmNvbSJ9.YM582A.5tjE1iE4pxWMcSKh3S86mLph0tk`
+- cookie: `session=eyJ0b2tlbiI6IjI1MGNlNDM5LTZhZWEtN...`
 
 
 The token can be stored on the local storage because it is only a part of the authentication proof. 
-The other part is contained in the HTTP-only "session" cookie (=the user's email encrypted with the app `secret-key`) which cannot be read by JavaScript. 
-An XSS attack would be able to get only a part of the authentication proof: the token, not the cookie.
+The other part is contained in the HTTP-only "session" cookie which cannot be read by JavaScript. 
 
 {{<linebreak>}}
 
@@ -282,7 +284,7 @@ There are multiple approachs to signout. I have opted for a `GET` method plus cl
 You might chose to keep the tokens and simply tag them as revoked or apply more complexe logics on which tokens you need to remove etc... 
 
 My signout function is blind stupid, it just get the user from the "session" cookie, remove the tokens associated to that user and 
-clear the "session" cookie. This way we make sure to remove both part of the authentication proof. 
+clear the "session" cookie. This way we make sure to remove both part of the authentication proof: token and cookie. 
 
 ```python
 def signout():
@@ -296,7 +298,8 @@ def signout():
 ### Whoami
 
 The whoami controller is decorated with the `authenticate` authentication middleware. This middleware, uppon success, will add the user to the global context `g`.
-The `whoami` method simply get the user from the global context `g` and return a jsonified reponse with the user's `email` and `name`.
+The `whoami` method simply get the user from the global context `g` and return a jsonified reponse with the user's `email` and `name`. It is good pratice to not 
+return the hashed password.
 
 ```python
 from flask import jsonify, g
@@ -307,19 +310,98 @@ def whoami():
     return jsonify(email=user["email"], name=user["name"]), 200
 ```
 
-#curl example
+```txt {linenos=false}
+> $ curl -i \
+    --header "Authorization: Bearer 9d897db6-7520-4deb-a86a-2723b19a4543" \
+    --cookie "session=eyJ0b2tlbiI6IjI1MGNlNDM5LTZhZWEtNGQwOC04MjliLTUzMmViNjllYm \ 
+    MzNCIsInVzZXIiOiJ1c2VyQG1haWwuY29tIn0.YM9TtQ.WeDyTF1NNB8elnkZdIffZdQTqbY" \
+    --request GET \
+    http://localhost:5000/auth/whoami
+
+HTTP/1.0 200 OK
+Content-Type: application/json
+Content-Length: 50
+Vary: Cookie
+Server: Werkzeug/2.0.1 Python/3.9.5
+Date: Sun, 20 Jun 2021 12:19:47 GMT
+
+{
+  "email": "user@mail.com", 
+  "name": "user"
+}
+```
 
 {{<linebreak >}}
 
 Now comes the main piece of this article: the authentication middleware. It is the critical part of the implementation. It should only succeed if the request
-provides the entire authentication proof: token + cookie.
+provides the entire authentication proof: token and cookie.
+
+```python
+import functools
 
 
+def authenticate(func):
+    @functools.wraps(func)
+    def inner(*args, **kwargs):
+        email = session.get("user")
+        if not email:
+            return "Authentication cookie missing", 401
+
+        token = request.headers.get("Authorization", "").strip().replace("Bearer ", "")
+        if not token:
+            return "Authentication token missing", 401
+
+        if token not in Tokens.get(email, []) or token != session.get("token"):
+            return "Invalid token", 401
+
+        g.user = Users[email]
+        return func(*args, **kwargs)
+
+    return inner
+```
+
+`authenticate` is a python `decorator` (fancy word for function composition: a function that takes another function as argument).
+The function `authenticate` takes as argument a controller (e.g. `def whoami`). It is not an article on Python decorators, 
+so let's dive into the logic right away.
+
+The first step is to get the "session" cookie value: `email = session.get("user")`. If the value is `None` then the middleware returns a `401 Unauthorized`.
+Then the middleware look for the token in the header `Authorization: Bearer <token>`. If the token is missing, then the middelware returns a `401 Unauthorized`.
+
+Then if the cookie and the token were found, the middleware verifies that the token is associated with the cookie by looking into the `Tokens` database entity.
+We also need to check that the token value contain in the "session" cookie match the one send in the header. Indeed, with the `app_secret` breached, an attacker 
+could craft a session cookie with the user's email. Storing the token in the "session" cookie, prevents cookie crafting/baking.
+If the verification fails it means the token is invalid and the middleware returns `401 Unauthorized`.
+
+Finally, the authentication proof was verified, the middleware attach the `Users[email]` instance to the global context `g` and call the controller function `func`.
+
+Testing with curl:
+
+```txt {linenos=false}
+> $ curl --header "Authorization: Bearer 9a64e921-d4a7-4923-9e61-67cdf7565201" \
+    http://localhost:5000/auth/whoami
+
+Authentication cookie missing
+
+
+> $ curl --cookie "session=eyJ1c2VyIjoidXNlckBtYWlsLmNvbSJ9.YM8x3g.vWn7uuvhSbrnACXscXsyRb0ZDx8" \
+    http://localhost:5000/auth/whoami
+
+Authentication token missing
+
+
+> $ curl --header "Authorization: Bearer 1234456789" \
+    --cookie "session=eyJ1c2VyIjoidXNlckBtYWlsLmNvbSJ9.YM8x3g.vWn7uuvhSbrnACXscXsyRb0ZDx8" \
+    http://localhost:5000/auth/whoami
+
+Invalid token
+```
 
 {{<linebreak 2>}}
 
+#pb 2 step attack: XSS then CSRF -> prevent with handshake route
 
-
-
+## Conclusion
+- **An XSS attack would be able to get only a part of the authentication proof: the token, not the cookie.**
+- **A CSRF attack would be able to use on the cookie, not the token, and would fail the authentication proof verification.**
 
 {{<linebreak>}}

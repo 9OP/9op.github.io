@@ -18,12 +18,11 @@ def authenticate(func):
         if not email:
             return "Authentication cookie missing", 401
 
-        bearer = request.headers.get("Authorization", "").strip().split()
-        if not bearer:
-            return "Authentication bearer missing", 401
+        token = request.headers.get("Authorization", "").strip().replace("Bearer ", "")
+        if not token:
+            return "Authentication token missing", 401
 
-        token = bearer[-1]
-        if token not in Tokens.get(email, []):
+        if token not in Tokens.get(email, []) or token != session.get("token"):
             return "Invalid token", 401
 
         g.user = Users[email]
@@ -62,6 +61,7 @@ def signin():
     token = str(uuid4())  # generate random token
     Tokens[user["email"]].append(token)
     session["user"] = user["email"]
+    session["token"] = token
     return token, 200
 
 
