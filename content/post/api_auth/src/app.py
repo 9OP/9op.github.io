@@ -15,7 +15,7 @@ def authenticate(func):
     @functools.wraps(func)
     def inner(*args, **kwargs):
         # handshake
-        if session.get("handshake") != request.headers.get("handshake", ""):
+        if session.get("handshake") != request.headers.get("Handshake", ""):
             return "Handshake failed", 401
         
         email = session.get("user")
