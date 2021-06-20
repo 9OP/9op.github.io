@@ -1,9 +1,9 @@
 baseurl = "https://9op.github.io/"
 languageCode = "en-us"
-title = "Martin Grd"
-theme= "default"
+title = "Martin"
+theme = "default"
 paginate = 5
-copyright= "© 2021 - Martin Grd - <a href='https://github.com/9op/9op.github.io'> source </a>"
+copyright = "Copyright © 2021 - Martin Guyard"
 
 [markup]
   [markup.highlight]
@@ -18,10 +18,11 @@ copyright= "© 2021 - Martin Grd - <a href='https://github.com/9op/9op.github.io
   contentTypeName = "post"
   defaultTheme = "light" # dark / light
   showMenuItems = 3 # elements before submenu trigger
+  sources = "<a href='https://github.com/9op/9op.github.io'> sources </a>"
 
 [languages]
     [languages.en.params.logo]
-      logoText = "/home/martin"
+      logoText = "/home"
       logoHomeLink = "/"
 
     [languages.en.menu]
@@ -29,11 +30,6 @@ copyright= "© 2021 - Martin Grd - <a href='https://github.com/9op/9op.github.io
         identifier = "about"
         name = "About"
         url = "/about"
-
-      [[languages.en.menu.main]]
-        identifier = "post"
-        name = "Posts"
-        url = "/post"
 
       [[languages.en.menu.main]]
         identifier = "archive"

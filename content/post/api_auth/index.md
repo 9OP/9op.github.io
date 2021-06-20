@@ -6,7 +6,6 @@ date: "2021-06-19"
 readingTime: 15
 tags: ["python", "flask", "api", "authentication", "backend"]
 cover: "cover.jpg"
-coverCaption: "© Christopher Burns"
 ---
 
 <!--description-->
@@ -15,10 +14,11 @@ API authentication is a critical component of any web service because it impacts
 and though you may find many tutorials on the web about this, most of them avoid the security question and just copy paste each other.
 I am writting this post, so from now on, it can be copy pasted by other wannabe tech guru and actually spread usefull information...
 
+<!--more-->
 
 This is not *another JSON web tokens authentication API tutorial*, here we are going to ask the right questions and think security first. 
 
-<!--more-->
+
 
 {{<linebreak>}}
 
