@@ -1,5 +1,5 @@
 ---
-draft: true
+draft: false
 toc: true
 title: "Secure API authentication"
 date: "2021-06-19"
