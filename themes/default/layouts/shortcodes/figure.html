@@ -1,6 +1,6 @@
 {{ $src := .Get "src" }}
 <figure class="center" >
-  <img src="{{  print (printf `resources/%s/` $.Site.Params.defaultTheme) $src  }}" class="img-toggle" />
+  <img src="{{  print `resources/` $src  }}" class="img-toggle" />
   {{ if .Get "caption" }}
     <figcaption class="center">{{ .Get "caption" | markdownify }}</figcaption>
   {{ end }}

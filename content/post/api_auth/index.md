@@ -37,7 +37,7 @@ This post is about discussing the security vulnerabilities (mostly XSS and CSRF)
 
 Before diving into the technical questions about security and implementation, let's present a generic approach to authentication.
 
-{{<figure src=authentication-mechanism.png caption=`Authentication mechanism flow diagram` >}}
+{{<figure src=authentication-mechanism-light.png caption=`Authentication mechanism flow diagram` >}}
 
 The authentication mechanism consists in:
 - A client sending his credentials to the server.
