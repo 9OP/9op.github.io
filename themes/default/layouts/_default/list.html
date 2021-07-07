@@ -6,7 +6,7 @@
         <div class="post-meta">
           {{ if .Date }}
             <span class="post-date">
-              {{ .Date.Format ($.Site.Params.DateFormatList | default "2006-01-02") }}
+              {{ .Date.Format ($.Site.Params.DateFormatList | default "Jan 02, 2006") }}
             </span>
 
             {{ if $.Site.Params.LastModDisplay }}
@@ -15,17 +15,17 @@
           {{ end }}
 
           <span class="post-read-time">
-            — {{ .Params.ReadingTime }} {{ $.Site.Params.MinuteReadingTime | default "min read" }}
+            {{ .Params.ReadingTime }} {{ $.Site.Params.MinuteReadingTime | default "min read" }}
           </span>
-        </div>
 
-        {{ if .Params.tags }}
-          <span class="post-tags">
-            {{ range .Params.tags }}
-              <a href="{{ (urlize (printf "tags/%s" . )) | absURL }}/">#{{ . }}</a>&nbsp;
-            {{ end }}
-          </span>
-        {{ end }}
+          {{ if .Params.tags }}
+            <span class="post-tags">
+              {{ range .Params.tags }}
+                <a href="{{ (urlize (printf "tags/%s" . )) | absURL }}/">#{{ . }}</a>&nbsp;
+              {{ end }}
+            </span>
+          {{ end }}
+        </div>
 
         <div class="post-description">
           {{ .Summary }}

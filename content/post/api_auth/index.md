@@ -5,7 +5,7 @@ title: "Secure API authentication"
 date: "2021-06-19"
 readingTime: 15
 tags: ["python", "flask", "api", "authentication", "backend"]
-cover: "cover.jpg"
+# cover: "cover.jpg"
 ---
 
 <!--description-->

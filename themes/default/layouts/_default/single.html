@@ -7,7 +7,7 @@
     <div class="post-meta">
       {{ if .Date | default nil }}
         <span class="post-date">
-          {{ .Date.Format ($.Site.Params.DateFormatSingle | default "2006-01-02") }}
+          {{ .Date.Format ($.Site.Params.DateFormatSingle | default "Jan 02, 2006") }}
         </span>
 
         {{ if eq .Type $contentTypeName }}
@@ -19,18 +19,18 @@
 
       {{ if .Params.ReadingTime }}
         <span class="post-read-time">
-          — {{ .Params.ReadingTime }} min read
+          {{ .Params.ReadingTime }} min read
+        </span>
+      {{ end }}
+
+      {{ if .Params.tags }}
+        <span class="post-tags">
+          {{ range .Params.tags }}
+            <a href="{{ (urlize (printf `tags/%s` . )) | absURL }}/">#{{ . }}</a>&nbsp;
+          {{ end }}
         </span>
       {{ end }}
     </div>
-
-    {{ if .Params.tags }}
-      <span class="post-tags">
-        {{ range .Params.tags }}
-          <a href="{{ (urlize (printf `tags/%s` . )) | absURL }}/">#{{ . }}</a>&nbsp;
-        {{ end }}
-      </span>
-    {{ end }}
 
     {{ if .Params.Cover }}
       <figure class="post-cover">
@@ -54,7 +54,7 @@
       </div>
     </div>
 
-    {{ if eq .Type $.Site.Params.contentTypeName }}
+    <!-- {{ if eq .Type $.Site.Params.contentTypeName }}
       {{ if or .NextInSection .PrevInSection }}
         <div class="pagination">
           <div class="pagination__title">
@@ -83,6 +83,6 @@
           </div>
         </div>
       {{ end }}
-    {{ end }}
+    {{ end }} -->
   </div>
 {{ end }}

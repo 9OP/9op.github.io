@@ -5,8 +5,8 @@ title: "Custom Go HTTP Router"
 date: "2021-05-30"
 readingTime: 30
 tags: ["go", "backend", "http", "router"]
-cover: "cover.jpg"
-coverCaption: "© Christopher Burns"
+# cover: "cover.jpg"
+# coverCaption: "© Christopher Burns"
 ---
 
 <!--description-->

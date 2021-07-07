@@ -9,7 +9,7 @@ copyright = "Copyright © 2021 - Martin Guyard"
 [markup]
   [markup.highlight]
     lineNos = true
-    style = "solarized-dark"
+    style = "monokai" # "solarized-dark"
     tabWidth = 4
   [markup.tableOfContents]
     endLevel = 4
